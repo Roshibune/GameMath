@@ -14,5 +14,8 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",
     "astro": "^7.3.8"
+  },
+  "devDependencies": {
+    "supabase": "^2.122.0"
   }
 }
