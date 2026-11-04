@@ -1,0 +1,38 @@
+{
+  "id": "00000000-0000-4000-8000-000000000001",
+  "operation": "multiplication",
+  "difficulty": "easy",
+  "question_type": "multiple_choice",
+  "is_active": false,
+  "prompt": "O dragão tem 5 baús, e cada baú tem 4 moedas. Quantas moedas ele tem ao todo?",
+  "content": {
+    "schema_version": 1,
+    "scene": { "theme": "dragon_chests", "groups": 5, "per_group": 4 },
+    "options": [
+      { "id": "a", "text": "9" },
+      { "id": "b", "text": "20" },
+      { "id": "c", "text": "25" }
+    ]
+  },
+  "answer_key": {
+    "correct_option_id": "b",
+    "check": { "a": 5, "b": 4, "op": "*" },
+    "distractors": {
+      "a": {
+        "error_type": "added_instead_of_multiplied",
+        "feedback": {
+          "message": "Opa! Você somou os blocos. Multiplicar é fazer grupos: precisamos de 5 grupos de 4.",
+          "animation": "merge_blocks"
+        }
+      },
+      "c": {
+        "error_type": "adjacent_table_fact",
+        "feedback": {
+          "message": "Quase lá! Você colocou uma moeda a mais em cada baú. Tire uma de cada e conte de novo!",
+          "animation": "extra_item_each_group"
+        }
+      }
+    }
+  },
+  "explanation": "5 baús com 4 moedas cada: 5 × 4 = 20 moedas."
+}
