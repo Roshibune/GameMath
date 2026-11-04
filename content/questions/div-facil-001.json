@@ -1,0 +1,11 @@
+{
+  "id": "div-facil-001",
+  "title": "Divisão Simples",
+  "question": "Quanto é 10 dividido por 2?",
+  "options": [
+    { "text": "5", "isCorrect": true },
+    { "text": "2", "isCorrect": false, "distractorType": "conceptual" },
+    { "text": "8", "isCorrect": false, "distractorType": "calculation" },
+    { "text": "20", "isCorrect": false, "distractorType": "operation_reversal" }
+  ]
+}
