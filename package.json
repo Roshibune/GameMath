@@ -10,7 +10,8 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "questions:validate": "node scripts/validate-questions.js"
+    "questions:validate": "node scripts/validate-questions.mjs",
+    "questions:build": "node scripts/build-seed.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",
