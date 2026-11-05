@@ -3,7 +3,7 @@
   "operation": "multiplication",
   "difficulty": "easy",
   "question_type": "multiple_choice",
-  "is_active": false,
+  "is_active": true,
   "prompt": "O dragão tem 5 baús, e cada baú tem 4 moedas. Quantas moedas ele tem ao todo?",
   "content": {
     "schema_version": 1,

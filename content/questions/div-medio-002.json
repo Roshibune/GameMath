@@ -1,0 +1,67 @@
+{
+  "id": "00000000-0000-4000-8000-000000000105",
+  "operation": "division",
+  "difficulty": "medium",
+  "question_type": "multiple_choice",
+  "is_active": true,
+  "prompt": "Há 54 flores para colocar em 6 vasos, com a mesma quantidade em cada vaso. Quantas flores vão em cada vaso?",
+  "explanation": "Repartindo 54 flores em 6 vasos, cada vaso fica com 9 flores, porque 54 ÷ 6 = 9.",
+  "content": {
+    "schema_version": 1,
+    "scene": {
+      "theme": "flower_vases",
+      "groups": 6,
+      "per_group": 9,
+      "total": 54
+    },
+    "options": [
+      {
+        "id": "a",
+        "text": "8"
+      },
+      {
+        "id": "b",
+        "text": "48"
+      },
+      {
+        "id": "c",
+        "text": "6"
+      },
+      {
+        "id": "d",
+        "text": "9"
+      }
+    ]
+  },
+  "answer_key": {
+    "correct_option_id": "d",
+    "check": {
+      "a": 54,
+      "b": 6,
+      "op": "/"
+    },
+    "distractors": {
+      "a": {
+        "error_type": "adjacent_table_fact",
+        "feedback": {
+          "message": "Quase lá! Na tabuada do 6, 6 × 8 dá 48. Faltam 6 para chegar a 54.",
+          "animation": "regroup"
+        }
+      },
+      "b": {
+        "error_type": "subtracted_instead_of_divided",
+        "feedback": {
+          "message": "Parece que você subtraiu (54 - 6 = 48). Dividir é repartir em grupos iguais.",
+          "animation": "regroup"
+        }
+      },
+      "c": {
+        "error_type": "divisor_dividend_confusion",
+        "feedback": {
+          "message": "Atenção! O 6 é o número de vasos. Falta descobrir quantas flores vão em cada um.",
+          "animation": "regroup"
+        }
+      }
+    }
+  }
+}
