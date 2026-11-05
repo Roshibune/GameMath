@@ -1,0 +1,27 @@
+---
+import Layout from "../../layouts/Layout.astro";
+---
+
+<Layout title="Área do aluno — GameMath">
+  <main>
+    <h1>Área do aluno</h1>
+    <p id="saudacao">Carregando...</p>
+    <p><a href="/aluno/jogar">Começar a jogar</a></p>
+  </main>
+</Layout>
+
+<script>
+  import { supabase } from "../../lib/supabase";
+
+  const saudacao = document.querySelector("#saudacao")!;
+
+  const { data } = await supabase.auth.getSession();
+  if (!data.session) {
+    // Ainda não há sessão de aluno nesta página. Combinar com quem for
+    // implementar o login (nickname + código do professor) para onde
+    // redirecionar o aluno que chega aqui sem sessão.
+    saudacao.textContent = "Você precisa entrar antes de jogar.";
+  } else {
+    saudacao.textContent = "Pronto para praticar?";
+  }
+</script>

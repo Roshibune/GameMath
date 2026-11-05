@@ -1,0 +1,27 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+---
+
+<Layout title="Escolher operação — GameMath">
+  <main>
+    <h1>O que você quer praticar hoje?</h1>
+    <div class="opcoes-operacao">
+      <a href="/aluno/jogar/multiplicacao" class="opcao-operacao">Multiplicação ✖️</a>
+      <a href="/aluno/jogar/divisao" class="opcao-operacao">Divisão ➗</a>
+    </div>
+  </main>
+</Layout>
+
+<style>
+  .opcoes-operacao {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+  .opcao-operacao {
+    padding: 1rem 1.5rem;
+    border: 2px solid currentColor;
+    border-radius: 0.75rem;
+    text-decoration: none;
+  }
+</style>

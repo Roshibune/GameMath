@@ -1,0 +1,224 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import type { Operation } from "../../../lib/questions/types";
+
+export function getStaticPaths() {
+  return [
+    {
+      params: { operacao: "multiplicacao" },
+      props: { operation: "multiplication" as Operation },
+    },
+    {
+      params: { operacao: "divisao" },
+      props: { operation: "division" as Operation },
+    },
+  ];
+}
+
+const { operation } = Astro.props;
+const titulo = operation === "multiplication" ? "Multiplicação" : "Divisão";
+---
+
+<Layout title={`${titulo} — GameMath`}>
+  <main data-operation={operation}>
+    <h1>{titulo}</h1>
+
+    <div id="estado-carregando">Buscando perguntas...</div>
+
+    <div id="estado-erro" hidden>
+      <p>Não deu para carregar as perguntas agora. Tente de novo.</p>
+      <button id="btn-tentar-de-novo" type="button">Tentar de novo</button>
+    </div>
+
+    <div id="estado-vazio" hidden>
+      <p>Ainda não há perguntas ativas de {titulo.toLowerCase()}. Volte mais tarde!</p>
+      <a href="/aluno/jogar">Escolher outra operação</a>
+    </div>
+
+    <section id="jogo" hidden>
+      <p id="progresso"></p>
+      <p id="pergunta-texto"></p>
+      <div id="opcoes"></div>
+      <p id="feedback" hidden></p>
+      <button id="btn-proxima" type="button" hidden>Próxima pergunta</button>
+    </section>
+
+    <section id="resultado" hidden>
+      <h2>Resultado</h2>
+      <p id="resultado-texto"></p>
+      <a href="/aluno/jogar">Jogar de novo</a>
+    </section>
+  </main>
+</Layout>
+
+<style>
+  #opcoes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 1rem 0;
+  }
+  #opcoes button {
+    padding: 0.6rem 1rem;
+    border: 2px solid currentColor;
+    border-radius: 0.5rem;
+    background: transparent;
+    cursor: pointer;
+  }
+  #opcoes button.certa {
+    border-color: green;
+  }
+  #opcoes button.errada {
+    border-color: crimson;
+  }
+</style>
+
+<script>
+  import { supabase } from "../../../lib/supabase";
+  import { fetchActiveQuestions, type ActiveQuestion } from "../../../lib/game/questions";
+  import type { Operation, AnswerResult } from "../../../lib/questions/types";
+
+  const main = document.querySelector("main")!;
+  const operation = main.dataset.operation as Operation;
+
+  const estados = ["carregando", "erro", "vazio", "jogo", "resultado"] as const;
+  type Estado = (typeof estados)[number];
+
+  const secoes: Record<Estado, HTMLElement> = {
+    carregando: document.querySelector("#estado-carregando")!,
+    erro: document.querySelector("#estado-erro")!,
+    vazio: document.querySelector("#estado-vazio")!,
+    jogo: document.querySelector("#jogo")!,
+    resultado: document.querySelector("#resultado")!,
+  };
+
+  const progresso = document.querySelector<HTMLElement>("#progresso")!;
+  const perguntaTexto = document.querySelector<HTMLElement>("#pergunta-texto")!;
+  const opcoesEl = document.querySelector<HTMLElement>("#opcoes")!;
+  const feedbackEl = document.querySelector<HTMLElement>("#feedback")!;
+  const btnProxima = document.querySelector<HTMLButtonElement>("#btn-proxima")!;
+  const resultadoTexto = document.querySelector<HTMLElement>("#resultado-texto")!;
+  const btnTentarDeNovo = document.querySelector<HTMLButtonElement>("#btn-tentar-de-novo")!;
+
+  let perguntas: ActiveQuestion[] = [];
+  let indiceAtual = 0;
+  let acertos = 0;
+  let respondendo = false;
+
+  function mostrar(estado: Estado) {
+    for (const nome of estados) secoes[nome].hidden = nome !== estado;
+  }
+
+  async function iniciar() {
+    mostrar("carregando");
+    try {
+      perguntas = await fetchActiveQuestions(operation, 10);
+    } catch (err) {
+      console.error(err);
+      mostrar("erro");
+      return;
+    }
+
+    if (perguntas.length === 0) {
+      mostrar("vazio");
+      return;
+    }
+
+    indiceAtual = 0;
+    acertos = 0;
+    mostrar("jogo");
+    renderizarPergunta();
+  }
+
+  function renderizarPergunta() {
+    respondendo = false;
+    const pergunta = perguntas[indiceAtual];
+
+    progresso.textContent = `Pergunta ${indiceAtual + 1} de ${perguntas.length}`;
+    perguntaTexto.textContent = pergunta.prompt;
+    feedbackEl.hidden = true;
+    btnProxima.hidden = true;
+    opcoesEl.innerHTML = "";
+
+    for (const opcao of pergunta.content.options) {
+      const botao = document.createElement("button");
+      botao.type = "button";
+      botao.textContent = opcao.text;
+      botao.addEventListener("click", () => responder(pergunta, opcao.id, botao));
+      opcoesEl.appendChild(botao);
+    }
+  }
+
+  async function responder(
+    pergunta: ActiveQuestion,
+    optionId: string,
+    botaoClicado: HTMLButtonElement,
+  ) {
+    if (respondendo) return;
+    respondendo = true;
+
+    opcoesEl
+      .querySelectorAll("button")
+      .forEach((botao) => ((botao as HTMLButtonElement).disabled = true));
+
+    // A resposta correta é checada no servidor (edge function check-answer),
+    // que é o único lugar com acesso ao gabarito. Nada aqui sabe a resposta certa.
+    const { data, error } = await supabase.functions.invoke<AnswerResult>("check-answer", {
+      body: { question_id: pergunta.id, option_id: optionId },
+    });
+
+    if (error || !data) {
+      feedbackEl.hidden = false;
+      feedbackEl.textContent = "Não deu para conferir essa resposta agora. Tente a próxima.";
+      btnProxima.hidden = false;
+      return;
+    }
+
+    if (data.correct) {
+      acertos++;
+      botaoClicado.classList.add("certa");
+    } else {
+      botaoClicado.classList.add("errada");
+    }
+
+    feedbackEl.hidden = false;
+    feedbackEl.textContent = data.correct
+      ? data.explanation
+      : (data.feedback?.message ?? data.explanation);
+
+    btnProxima.hidden = false;
+  }
+
+  btnProxima.addEventListener("click", async () => {
+    indiceAtual++;
+    if (indiceAtual < perguntas.length) {
+      renderizarPergunta();
+    } else {
+      await salvarTentativa();
+      mostrar("resultado");
+      resultadoTexto.textContent = `Você acertou ${acertos} de ${perguntas.length} perguntas.`;
+    }
+  });
+
+  btnTentarDeNovo.addEventListener("click", iniciar);
+
+  async function salvarTentativa() {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const studentId = sessionData.session?.user.id;
+    if (!studentId) return;
+
+    // TODO combinar com o grupo: "difficulty" é um valor só por tentativa,
+    // mas as perguntas podem ter dificuldades diferentes. Por ora grava "easy".
+    const { error } = await supabase.from("game_attempts").insert({
+      student_id: studentId,
+      operation,
+      difficulty: "easy",
+      total_questions: perguntas.length,
+      correct_answers: acertos,
+    });
+
+    if (error) console.error("Não foi possível salvar a tentativa:", error);
+  }
+
+  iniciar();
+</script>
