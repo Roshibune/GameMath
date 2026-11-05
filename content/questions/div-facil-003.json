@@ -1,0 +1,67 @@
+{
+  "id": "00000000-0000-4000-8000-000000000103",
+  "operation": "division",
+  "difficulty": "easy",
+  "question_type": "multiple_choice",
+  "is_active": true,
+  "prompt": "O padeiro tem 18 pães e coloca 3 pães em cada cesta. Quantas cestas ele usa?",
+  "explanation": "Formando grupos de 3 com 18 pães, dá para encher 6 cestas, porque 18 ÷ 3 = 6.",
+  "content": {
+    "schema_version": 1,
+    "scene": {
+      "theme": "bread_baskets",
+      "groups": 6,
+      "per_group": 3,
+      "total": 18
+    },
+    "options": [
+      {
+        "id": "a",
+        "text": "6"
+      },
+      {
+        "id": "b",
+        "text": "15"
+      },
+      {
+        "id": "c",
+        "text": "3"
+      },
+      {
+        "id": "d",
+        "text": "54"
+      }
+    ]
+  },
+  "answer_key": {
+    "correct_option_id": "a",
+    "check": {
+      "a": 18,
+      "b": 3,
+      "op": "/"
+    },
+    "distractors": {
+      "b": {
+        "error_type": "subtracted_instead_of_divided",
+        "feedback": {
+          "message": "Parece que você subtraiu (18 - 3 = 15). Dividir é formar grupos iguais.",
+          "animation": "regroup"
+        }
+      },
+      "c": {
+        "error_type": "divisor_dividend_confusion",
+        "feedback": {
+          "message": "Atenção! O 3 é quantos pães vão em cada cesta. Queremos saber quantas cestas.",
+          "animation": "regroup"
+        }
+      },
+      "d": {
+        "error_type": "multiplied_instead_of_divided",
+        "feedback": {
+          "message": "Você multiplicou (18 × 3 = 54). Dividir é formar grupos de 3 até acabarem os pães.",
+          "animation": "regroup"
+        }
+      }
+    }
+  }
+}

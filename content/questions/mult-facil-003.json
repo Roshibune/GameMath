@@ -1,0 +1,66 @@
+{
+  "id": "00000000-0000-4000-8000-000000000003",
+  "operation": "multiplication",
+  "difficulty": "easy",
+  "question_type": "multiple_choice",
+  "is_active": true,
+  "prompt": "Na sala, 4 mesas têm 3 crianças sentadas em cada uma. Quantas crianças há nas mesas?",
+  "explanation": "4 mesas com 3 crianças cada: 4 × 3 = 12 crianças.",
+  "content": {
+    "schema_version": 1,
+    "scene": {
+      "theme": "classroom_tables",
+      "groups": 4,
+      "per_group": 3
+    },
+    "options": [
+      {
+        "id": "a",
+        "text": "12"
+      },
+      {
+        "id": "b",
+        "text": "7"
+      },
+      {
+        "id": "c",
+        "text": "16"
+      },
+      {
+        "id": "d",
+        "text": "15"
+      }
+    ]
+  },
+  "answer_key": {
+    "correct_option_id": "a",
+    "check": {
+      "a": 4,
+      "b": 3,
+      "op": "*"
+    },
+    "distractors": {
+      "b": {
+        "error_type": "added_instead_of_multiplied",
+        "feedback": {
+          "message": "Opa! Você somou 4 + 3. Multiplicar é contar 4 grupos de 3 crianças.",
+          "animation": "merge_blocks"
+        }
+      },
+      "c": {
+        "error_type": "adjacent_table_fact",
+        "feedback": {
+          "message": "Quase! Você colocou uma criança a mais em cada mesa. Conte de novo!",
+          "animation": "extra_item_each_group"
+        }
+      },
+      "d": {
+        "error_type": "adjacent_table_fact",
+        "feedback": {
+          "message": "Quase lá! Você contou uma mesa a mais. Eram só 4 mesas.",
+          "animation": "regroup"
+        }
+      }
+    }
+  }
+}
