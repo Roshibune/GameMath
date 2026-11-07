@@ -1,0 +1,66 @@
+{
+  "id": "00000000-0000-4000-8000-000000000002",
+  "operation": "multiplication",
+  "difficulty": "easy",
+  "question_type": "multiple_choice",
+  "is_active": true,
+  "prompt": "A fada colheu 3 cestas de maçãs, e cada cesta tem 6 maçãs. Quantas maçãs ela colheu ao todo?",
+  "explanation": "3 cestas com 6 maçãs cada: 3 × 6 = 18 maçãs.",
+  "content": {
+    "schema_version": 1,
+    "scene": {
+      "theme": "fairy_baskets",
+      "groups": 3,
+      "per_group": 6
+    },
+    "options": [
+      {
+        "id": "a",
+        "text": "24"
+      },
+      {
+        "id": "b",
+        "text": "9"
+      },
+      {
+        "id": "c",
+        "text": "18"
+      },
+      {
+        "id": "d",
+        "text": "15"
+      }
+    ]
+  },
+  "answer_key": {
+    "correct_option_id": "c",
+    "check": {
+      "a": 3,
+      "b": 6,
+      "op": "*"
+    },
+    "distractors": {
+      "a": {
+        "error_type": "adjacent_table_fact",
+        "feedback": {
+          "message": "Quase! Você contou uma cesta a mais. São só 3 cestas com 6 maçãs cada.",
+          "animation": "regroup"
+        }
+      },
+      "b": {
+        "error_type": "added_instead_of_multiplied",
+        "feedback": {
+          "message": "Opa! Você somou 3 + 6. Multiplicar é juntar 3 grupos de 6 maçãs.",
+          "animation": "merge_blocks"
+        }
+      },
+      "d": {
+        "error_type": "adjacent_table_fact",
+        "feedback": {
+          "message": "Quase lá! Faltou uma maçã em cada cesta. Conte cesta por cesta.",
+          "animation": "extra_item_each_group"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "id": "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+  "operation": "division",
+  "difficulty": "easy",
+  "question_type": "multiple_choice",
+  "is_active": true,
+  "prompt": "Quanto é 10 dividido por 2?",
+  "explanation": "Dividir 10 por 2 significa separar 10 elementos em 2 grupos iguais, resultando em 5 em cada grupo.",
+  "content": {
+    "schema_version": 1,
+    "scene": {
+      "theme": "default",
+      "groups": 2,
+      "per_group": 5,
+      "total": 10
+    },
+    "options": [
+      { "id": "opt_a", "text": "5" },
+      { "id": "opt_b", "text": "2" },
+      { "id": "opt_c", "text": "8" },
+      { "id": "opt_d", "text": "20" }
+    ]
+  },
+  "answer_key": {
+    "correct_option_id": "opt_a",
+    "check": {
+      "a": 10,
+      "b": 2,
+      "op": "/"
+    },
+    "distractors": {
+      "opt_b": {
+        "error_type": "divisor_dividend_confusion",
+        "feedback": {
+          "message": "Atenção ao divisor! O 2 é o número de grupos, não o resultado.",
+          "animation": "regroup"
+        }
+      },
+      "opt_c": {
+        "error_type": "subtracted_instead_of_divided",
+        "feedback": {
+          "message": "Parece que você subtraiu (10 - 2 = 8). Dividir é repartir em grupos iguais.",
+          "animation": "regroup"
+        }
+      },
+      "opt_d": {
+        "error_type": "multiplied_instead_of_divided",
+        "feedback": {
+          "message": "Você multiplicou (10 × 2 = 20). Dividir é repartir 10 em 2 grupos iguais.",
+          "animation": "regroup"
+        }
+      }
+    }
+  }
+}
