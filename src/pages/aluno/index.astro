@@ -3,12 +3,29 @@ import Layout from "../../layouts/Layout.astro";
 ---
 
 <Layout title="Área do aluno — GameMath">
-  <main>
+  <main class="aluno-entrada">
     <h1>Área do aluno</h1>
     <p id="saudacao">Carregando...</p>
-    <p><a href="/aluno/jogar">Começar a jogar</a></p>
+    <a class="botao-principal" href="/aluno/jogar">Começar a jogar</a>
   </main>
 </Layout>
+
+<style>
+  .aluno-entrada {
+    padding: 1.5rem;
+    text-align: center;
+  }
+  .botao-principal {
+    display: inline-block;
+    margin-top: 1rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.75rem;
+    background: var(--fb-block, #4f7cff);
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+  }
+</style>
 
 <script>
   import { supabase } from "../../lib/supabase";
@@ -17,9 +34,10 @@ import Layout from "../../layouts/Layout.astro";
 
   const { data } = await supabase.auth.getSession();
   if (!data.session) {
-    // Ainda não há sessão de aluno nesta página. Combinar com quem for
-    // implementar o login (nickname + código do professor) para onde
-    // redirecionar o aluno que chega aqui sem sessão.
+    // Ainda não há sessão de aluno nesta página. O cadastro/login do aluno
+    // (apelido + PIN + código do professor) é tarefa do Integrante 1.
+    // Quando isso existir, ajustar para onde redirecionar quem chega aqui
+    // sem sessão (provavelmente para a tela de login).
     saudacao.textContent = "Você precisa entrar antes de jogar.";
   } else {
     saudacao.textContent = "Pronto para praticar?";

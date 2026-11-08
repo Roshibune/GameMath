@@ -1,5 +1,6 @@
 ---
 import Layout from "../../../layouts/Layout.astro";
+import "../../../styles/feedback.css";
 import type { Operation } from "../../../lib/questions/types";
 
 export function getStaticPaths() {
@@ -20,63 +21,157 @@ const titulo = operation === "multiplication" ? "Multiplicação" : "Divisão";
 ---
 
 <Layout title={`${titulo} — GameMath`}>
-  <main data-operation={operation}>
+  <main data-operation={operation} class="jogo-pagina">
     <h1>{titulo}</h1>
 
     <div id="estado-carregando">Buscando perguntas...</div>
 
     <div id="estado-erro" hidden>
-      <p>Não deu para carregar as perguntas agora. Tente de novo.</p>
-      <button id="btn-tentar-de-novo" type="button">Tentar de novo</button>
+      <p>Não deu para carregar ou salvar a partida agora. Tente de novo.</p>
+      <button id="btn-tentar-de-novo" type="button" class="botao-secundario">
+        Tentar de novo
+      </button>
     </div>
 
     <div id="estado-vazio" hidden>
-      <p>Ainda não há perguntas ativas de {titulo.toLowerCase()}. Volte mais tarde!</p>
-      <a href="/aluno/jogar">Escolher outra operação</a>
+      <p>
+        Ainda não há perguntas suficientes de {titulo.toLowerCase()} para jogar
+        uma partida completa. Volte mais tarde!
+      </p>
+      <a href="/aluno/jogar" class="botao-secundario">Escolher outra operação</a>
     </div>
 
     <section id="jogo" hidden>
-      <p id="progresso"></p>
-      <p id="pergunta-texto"></p>
-      <div id="opcoes"></div>
-      <p id="feedback" hidden></p>
-      <button id="btn-proxima" type="button" hidden>Próxima pergunta</button>
+      <p id="progresso" class="progresso"></p>
+      <p id="pergunta-texto" class="pergunta-texto"></p>
+      <div id="cena-container"></div>
+      <div id="opcoes" class="opcoes"></div>
+      <p id="feedback" class="feedback" hidden></p>
+      <p id="explicacao" class="explicacao" hidden></p>
+      <button id="btn-proxima" type="button" class="botao-principal" hidden>
+        Próxima pergunta
+      </button>
     </section>
 
     <section id="resultado" hidden>
       <h2>Resultado</h2>
-      <p id="resultado-texto"></p>
-      <a href="/aluno/jogar">Jogar de novo</a>
+      <p id="resultado-texto" class="resultado-texto"></p>
+      <a href="/aluno/jogar" class="botao-principal">Jogar de novo</a>
     </section>
   </main>
 </Layout>
 
 <style>
-  #opcoes {
+  .jogo-pagina {
+    padding: 1.5rem;
+    max-width: 40rem;
+    margin: 0 auto;
+  }
+  .pergunta-texto {
+    font-size: 1.25rem;
+    font-weight: bold;
+    margin: 1rem 0 0.5rem;
+  }
+  .progresso {
+    color: #555;
+    margin-bottom: 0.5rem;
+  }
+  .opcoes {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
+    gap: 0.6rem;
     margin: 1rem 0;
   }
-  #opcoes button {
-    padding: 0.6rem 1rem;
-    border: 2px solid currentColor;
-    border-radius: 0.5rem;
-    background: transparent;
+  .opcoes button {
+    flex: 1 1 7rem;
+    min-height: 3rem;
+    padding: 0.75rem 1rem;
+    font-size: 1.1rem;
+    border: 3px solid var(--fb-group-border, #c9d3ff);
+    border-radius: 0.75rem;
+    background: white;
     cursor: pointer;
   }
-  #opcoes button.certa {
-    border-color: green;
+  .opcoes button:disabled {
+    cursor: default;
   }
-  #opcoes button.errada {
-    border-color: crimson;
+  .opcoes button.certa {
+    border-color: #2e9e4a;
+    background: #e8f8ec;
+  }
+  .opcoes button.errada {
+    border-color: #c94f4f;
+    background: #fdecec;
+  }
+  .feedback {
+    font-size: 1.1rem;
+    font-weight: bold;
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+  }
+  .feedback.sucesso {
+    background: #e8f8ec;
+    color: #1f6b33;
+  }
+  .feedback.tente-de-novo {
+    background: var(--fb-soft, #fff3d6);
+    color: #7a5b00;
+  }
+  .explicacao {
+    color: #333;
+  }
+  .botao-principal,
+  .botao-secundario {
+    display: inline-block;
+    margin-top: 0.75rem;
+    padding: 0.75rem 1.5rem;
+    min-height: 2.75rem;
+    border-radius: 0.75rem;
+    border: none;
+    font-weight: bold;
+    font-size: 1rem;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .botao-principal {
+    background: var(--fb-block, #4f7cff);
+    color: white;
+  }
+  .botao-secundario {
+    background: #eee;
+    color: #222;
+  }
+  .resultado-texto {
+    font-size: 1.1rem;
+  }
+
+  /* Telas pequenas (Chromebook/tablet) */
+  @media (max-width: 480px) {
+    .opcoes button {
+      flex: 1 1 100%;
+    }
   }
 </style>
 
 <script>
   import { supabase } from "../../../lib/supabase";
-  import { fetchActiveQuestions, type ActiveQuestion } from "../../../lib/game/questions";
+  import { buildFeedback, buildResultMessage } from "../../../lib/messages";
+  import { playFeedback } from "../../../lib/feedback";
   import type { Operation, AnswerResult } from "../../../lib/questions/types";
+
+  // Quantidade exigida pela função submit-attempt: hoje ela só aceita
+  // partidas com exatamente 5 respostas.
+  const PERGUNTAS_POR_PARTIDA = 5;
+
+  interface ActiveQuestion {
+    id: string;
+    prompt: string;
+    question_type: string;
+    content: {
+      scene: { groups: number; per_group: number | null };
+      options: { id: string; text: string }[];
+    };
+  }
 
   const main = document.querySelector("main")!;
   const operation = main.dataset.operation as Operation;
@@ -94,38 +189,80 @@ const titulo = operation === "multiplication" ? "Multiplicação" : "Divisão";
 
   const progresso = document.querySelector<HTMLElement>("#progresso")!;
   const perguntaTexto = document.querySelector<HTMLElement>("#pergunta-texto")!;
+  const cenaContainer = document.querySelector<HTMLElement>("#cena-container")!;
   const opcoesEl = document.querySelector<HTMLElement>("#opcoes")!;
   const feedbackEl = document.querySelector<HTMLElement>("#feedback")!;
+  const explicacaoEl = document.querySelector<HTMLElement>("#explicacao")!;
   const btnProxima = document.querySelector<HTMLButtonElement>("#btn-proxima")!;
   const resultadoTexto = document.querySelector<HTMLElement>("#resultado-texto")!;
   const btnTentarDeNovo = document.querySelector<HTMLButtonElement>("#btn-tentar-de-novo")!;
 
   let perguntas: ActiveQuestion[] = [];
   let indiceAtual = 0;
-  let acertos = 0;
+  let respostas: { question_id: string; option_id: string }[] = [];
   let respondendo = false;
+  let ultimaMensagemAcerto: string | undefined;
 
   function mostrar(estado: Estado) {
     for (const nome of estados) secoes[nome].hidden = nome !== estado;
   }
 
+  // Desenha a cena de blocos (mesma estrutura do componente BlockScene.astro,
+  // mas gerada em JS porque a pergunta muda no navegador sem recarregar a página).
+  function renderizarCena(groups: number, perGroup: number | null): HTMLElement {
+    const scene = document.createElement("div");
+    scene.className = "scene";
+    scene.setAttribute("data-scene", "");
+    scene.setAttribute("role", "img");
+    scene.setAttribute(
+      "aria-label",
+      `${groups} grupos com ${perGroup ?? 0} itens em cada`,
+    );
+
+    for (let g = 0; g < groups; g++) {
+      const group = document.createElement("div");
+      group.className = "group";
+      group.style.setProperty("--i", String(g));
+      for (let i = 0; i < (perGroup ?? 0); i++) {
+        const block = document.createElement("span");
+        block.className = "block";
+        group.appendChild(block);
+      }
+      scene.appendChild(group);
+    }
+    return scene;
+  }
+
   async function iniciar() {
     mostrar("carregando");
-    try {
-      perguntas = await fetchActiveQuestions(operation, 10);
-    } catch (err) {
-      console.error(err);
+    respostas = [];
+    indiceAtual = 0;
+    ultimaMensagemAcerto = undefined;
+
+    const { data, error } = await supabase
+      .from("questions")
+      .select("id, prompt, question_type, content")
+      .eq("operation", operation)
+      .eq("is_active", true)
+      .eq("question_type", "multiple_choice");
+
+    if (error) {
+      console.error(error);
       mostrar("erro");
       return;
     }
 
-    if (perguntas.length === 0) {
+    const todas = (data ?? []) as ActiveQuestion[];
+    if (todas.length < PERGUNTAS_POR_PARTIDA) {
       mostrar("vazio");
       return;
     }
 
-    indiceAtual = 0;
-    acertos = 0;
+    // Embaralha e pega exatamente a quantidade exigida pelo submit-attempt.
+    perguntas = todas
+      .sort(() => Math.random() - 0.5)
+      .slice(0, PERGUNTAS_POR_PARTIDA);
+
     mostrar("jogo");
     renderizarPergunta();
   }
@@ -137,8 +274,14 @@ const titulo = operation === "multiplication" ? "Multiplicação" : "Divisão";
     progresso.textContent = `Pergunta ${indiceAtual + 1} de ${perguntas.length}`;
     perguntaTexto.textContent = pergunta.prompt;
     feedbackEl.hidden = true;
+    explicacaoEl.hidden = true;
     btnProxima.hidden = true;
     opcoesEl.innerHTML = "";
+    cenaContainer.innerHTML = "";
+
+    cenaContainer.appendChild(
+      renderizarCena(pergunta.content.scene.groups, pergunta.content.scene.per_group),
+    );
 
     for (const opcao of pergunta.content.options) {
       const botao = document.createElement("button");
@@ -161,30 +304,36 @@ const titulo = operation === "multiplication" ? "Multiplicação" : "Divisão";
       .querySelectorAll("button")
       .forEach((botao) => ((botao as HTMLButtonElement).disabled = true));
 
-    // A resposta correta é checada no servidor (edge function check-answer),
-    // que é o único lugar com acesso ao gabarito. Nada aqui sabe a resposta certa.
+    // A resposta certa é conferida no servidor (função check-answer).
+    // O navegador nunca recebe o gabarito, só se acertou e a explicação.
     const { data, error } = await supabase.functions.invoke<AnswerResult>("check-answer", {
       body: { question_id: pergunta.id, option_id: optionId },
     });
 
+    respostas.push({ question_id: pergunta.id, option_id: optionId });
+
     if (error || !data) {
       feedbackEl.hidden = false;
-      feedbackEl.textContent = "Não deu para conferir essa resposta agora. Tente a próxima.";
+      feedbackEl.className = "feedback tente-de-novo";
+      feedbackEl.textContent = "Não deu para conferir essa resposta agora.";
       btnProxima.hidden = false;
       return;
     }
 
-    if (data.correct) {
-      acertos++;
-      botaoClicado.classList.add("certa");
-    } else {
-      botaoClicado.classList.add("errada");
-    }
+    botaoClicado.classList.add(data.correct ? "certa" : "errada");
+
+    const exibir = buildFeedback(data, ultimaMensagemAcerto);
+    if (data.correct) ultimaMensagemAcerto = exibir.message;
+
+    const scene = cenaContainer.querySelector<HTMLElement>("[data-scene]");
+    if (scene) await playFeedback(scene, exibir.animation);
 
     feedbackEl.hidden = false;
-    feedbackEl.textContent = data.correct
-      ? data.explanation
-      : (data.feedback?.message ?? data.explanation);
+    feedbackEl.className = `feedback ${exibir.tone === "success" ? "sucesso" : "tente-de-novo"}`;
+    feedbackEl.textContent = exibir.message;
+
+    explicacaoEl.hidden = false;
+    explicacaoEl.textContent = exibir.explanation;
 
     btnProxima.hidden = false;
   }
@@ -194,30 +343,36 @@ const titulo = operation === "multiplication" ? "Multiplicação" : "Divisão";
     if (indiceAtual < perguntas.length) {
       renderizarPergunta();
     } else {
-      await salvarTentativa();
-      mostrar("resultado");
-      resultadoTexto.textContent = `Você acertou ${acertos} de ${perguntas.length} perguntas.`;
+      await finalizarPartida();
     }
   });
 
   btnTentarDeNovo.addEventListener("click", iniciar);
 
-  async function salvarTentativa() {
-    const { data: sessionData } = await supabase.auth.getSession();
-    const studentId = sessionData.session?.user.id;
-    if (!studentId) return;
+  async function finalizarPartida() {
+    mostrar("carregando");
 
-    // TODO combinar com o grupo: "difficulty" é um valor só por tentativa,
-    // mas as perguntas podem ter dificuldades diferentes. Por ora grava "easy".
-    const { error } = await supabase.from("game_attempts").insert({
-      student_id: studentId,
-      operation,
-      difficulty: "easy",
-      total_questions: perguntas.length,
-      correct_answers: acertos,
+    // A pontuação é calculada e salva pelo servidor (função submit-attempt);
+    // o navegador só envia as respostas, nunca o placar.
+    const { data, error } = await supabase.functions.invoke<{
+      ok: boolean;
+      total_questions: number;
+      correct_answers: number;
+    }>("submit-attempt", {
+      body: { operation, answers: respostas },
     });
 
-    if (error) console.error("Não foi possível salvar a tentativa:", error);
+    if (error || !data?.ok) {
+      console.error(error ?? data);
+      mostrar("erro");
+      return;
+    }
+
+    mostrar("resultado");
+    resultadoTexto.textContent = buildResultMessage(
+      data.correct_answers,
+      data.total_questions,
+    );
   }
 
   iniciar();
