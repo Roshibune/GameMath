@@ -1,0 +1,67 @@
+{
+  "id": "00000000-0000-4000-8000-000000000102",
+  "operation": "division",
+  "difficulty": "easy",
+  "question_type": "multiple_choice",
+  "is_active": true,
+  "prompt": "Marina tem 12 balas e quer repartir igualmente entre 3 amigos. Quantas balas cada amigo recebe?",
+  "explanation": "Repartindo 12 balas entre 3 amigos, cada um fica com 4 balas, porque 12 ÷ 3 = 4.",
+  "content": {
+    "schema_version": 1,
+    "scene": {
+      "theme": "candy_friends",
+      "groups": 3,
+      "per_group": 4,
+      "total": 12
+    },
+    "options": [
+      {
+        "id": "a",
+        "text": "9"
+      },
+      {
+        "id": "b",
+        "text": "36"
+      },
+      {
+        "id": "c",
+        "text": "4"
+      },
+      {
+        "id": "d",
+        "text": "3"
+      }
+    ]
+  },
+  "answer_key": {
+    "correct_option_id": "c",
+    "check": {
+      "a": 12,
+      "b": 3,
+      "op": "/"
+    },
+    "distractors": {
+      "a": {
+        "error_type": "subtracted_instead_of_divided",
+        "feedback": {
+          "message": "Parece que você subtraiu (12 - 3 = 9). Dividir é repartir em partes iguais.",
+          "animation": "regroup"
+        }
+      },
+      "b": {
+        "error_type": "multiplied_instead_of_divided",
+        "feedback": {
+          "message": "Você multiplicou (12 × 3 = 36). Dividir é repartir 12 balas entre 3 amigos.",
+          "animation": "regroup"
+        }
+      },
+      "d": {
+        "error_type": "divisor_dividend_confusion",
+        "feedback": {
+          "message": "Atenção! O 3 é o número de amigos. Falta descobrir quantas balas cada um ganha.",
+          "animation": "regroup"
+        }
+      }
+    }
+  }
+}

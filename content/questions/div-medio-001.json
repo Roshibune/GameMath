@@ -1,0 +1,67 @@
+{
+  "id": "00000000-0000-4000-8000-000000000104",
+  "operation": "division",
+  "difficulty": "medium",
+  "question_type": "multiple_choice",
+  "is_active": true,
+  "prompt": "A loja tem 28 bolas e quer guardar todas em 4 caixas iguais. Quantas bolas vão em cada caixa?",
+  "explanation": "Repartindo 28 bolas em 4 caixas iguais, cada caixa fica com 7 bolas, porque 28 ÷ 4 = 7.",
+  "content": {
+    "schema_version": 1,
+    "scene": {
+      "theme": "toy_boxes",
+      "groups": 4,
+      "per_group": 7,
+      "total": 28
+    },
+    "options": [
+      {
+        "id": "a",
+        "text": "24"
+      },
+      {
+        "id": "b",
+        "text": "7"
+      },
+      {
+        "id": "c",
+        "text": "32"
+      },
+      {
+        "id": "d",
+        "text": "4"
+      }
+    ]
+  },
+  "answer_key": {
+    "correct_option_id": "b",
+    "check": {
+      "a": 28,
+      "b": 4,
+      "op": "/"
+    },
+    "distractors": {
+      "a": {
+        "error_type": "subtracted_instead_of_divided",
+        "feedback": {
+          "message": "Parece que você subtraiu (28 - 4 = 24). Dividir é repartir em partes iguais.",
+          "animation": "regroup"
+        }
+      },
+      "c": {
+        "error_type": "other",
+        "feedback": {
+          "message": "Você somou 28 + 4. Dividir é repartir as bolas em 4 caixas iguais.",
+          "animation": "regroup"
+        }
+      },
+      "d": {
+        "error_type": "divisor_dividend_confusion",
+        "feedback": {
+          "message": "Atenção! O 4 é o número de caixas. Falta descobrir quantas bolas vão em cada uma.",
+          "animation": "regroup"
+        }
+      }
+    }
+  }
+}

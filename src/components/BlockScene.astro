@@ -1,0 +1,28 @@
+---
+import "../styles/feedback.css";
+
+interface Props {
+  groups: number;
+  perGroup: number | null;
+}
+
+const { groups, perGroup } = Astro.props;
+const itemsPerGroup = perGroup ?? 0;
+---
+
+<div
+  class="scene"
+  data-scene
+  role="img"
+  aria-label={`${groups} grupos com ${itemsPerGroup} itens em cada`}
+>
+  {
+    Array.from({ length: groups }, (_, g) => (
+      <div class="group" style={`--i:${g}`}>
+        {Array.from({ length: itemsPerGroup }, () => (
+          <span class="block" />
+        ))}
+      </div>
+    ))
+  }
+</div>
