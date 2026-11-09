@@ -1,0 +1,57 @@
+---
+import Layout from "../../layouts/Layout.astro";
+
+// Esta página é só para desenvolvimento.
+if (!import.meta.env.DEV) {
+  return Astro.redirect("/");
+}
+---
+
+<Layout title="Teste de perguntas — GameMath">
+  <main>
+    <h1>Teste de busca de perguntas</h1>
+    <p>
+      Só para desenvolvimento. Sem login, o banco não devolve perguntas
+      (a leitura é liberada apenas para usuários autenticados).
+    </p>
+
+    <button type="button" data-op="multiplication">Buscar multiplicação</button>
+    <button type="button" data-op="division">Buscar divisão</button>
+    <button type="button" id="testar-check">Testar check-answer</button>
+
+    <pre id="saida">Clique em um botão.</pre>
+  </main>
+
+  <script>
+    import { fetchGameQuestions } from "../../lib/questions/api";
+    import { checkAnswer } from "../../lib/questions/server";
+    import type { Operation } from "../../lib/questions/types";
+
+    const saida = document.querySelector<HTMLElement>("#saida")!;
+
+    document.querySelectorAll<HTMLButtonElement>("[data-op]").forEach((button) => {
+      button.addEventListener("click", async () => {
+        saida.textContent = "Carregando...";
+        try {
+          const questions = await fetchGameQuestions(button.dataset.op as Operation);
+          saida.textContent =
+            `${questions.length} pergunta(s) recebida(s)\n\n` +
+            JSON.stringify(questions, null, 2);
+        } catch (e) {
+          saida.textContent = "Erro: " + (e instanceof Error ? e.message : String(e));
+        }
+      });
+    });
+
+    // Usa a questão mult-facil-001 e a alternativa "a" (um distrator).
+    document.querySelector("#testar-check")!.addEventListener("click", async () => {
+      saida.textContent = "Carregando...";
+      try {
+        const result = await checkAnswer("00000000-0000-4000-8000-000000000001", "a");
+        saida.textContent = "Resposta do servidor:\n\n" + JSON.stringify(result, null, 2);
+      } catch (e) {
+        saida.textContent = "Erro: " + (e instanceof Error ? e.message : String(e));
+      }
+    });
+  </script>
+</Layout>

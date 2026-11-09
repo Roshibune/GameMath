@@ -1,0 +1,141 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import FeedbackPanel from "../../components/FeedbackPanel.astro";
+import "../../styles/feedback.css";
+import "../../styles/game.css";
+
+// Esta página é só para desenvolvimento.
+if (!import.meta.env.DEV) {
+  return Astro.redirect("/");
+}
+---
+
+<Layout title="Teste do jogo — GameMath">
+  <main class="game">
+    <h1>Teste da tela de pergunta</h1>
+
+    <h2 id="pergunta" class="game-prompt" tabindex="-1" data-prompt></h2>
+    <div class="scene" data-scene role="img"></div>
+    <div class="options" data-options role="group" aria-labelledby="pergunta"></div>
+
+    <FeedbackPanel />
+
+    <button type="button" class="game-next" id="proxima" hidden>Próxima pergunta</button>
+  </main>
+
+  <script>
+    import { playFeedback } from "../../lib/feedback";
+    import { buildFeedback } from "../../lib/messages";
+    import { clearFeedback, renderFeedback } from "../../lib/feedback-panel";
+    import { renderScene } from "../../lib/scene";
+    import { lockOptions, renderQuestion, type QuestionView } from "../../lib/question-view";
+    import type { AnswerResult, PublicQuestion } from "../../lib/questions/types";
+
+    interface Sample {
+      question: PublicQuestion;
+      correct: string;
+      explanation: string;
+      wrong: Record<string, NonNullable<AnswerResult["feedback"]>>;
+    }
+
+    // Respostas simuladas localmente (no jogo real, quem responde é o check-answer).
+    const samples: Sample[] = [
+      {
+        question: {
+          id: "00000000-0000-4000-8000-000000000001",
+          operation: "multiplication",
+          difficulty: "easy",
+          question_type: "multiple_choice",
+          prompt: "O dragão tem 5 baús, e cada baú tem 4 moedas. Quantas moedas ele tem ao todo?",
+          content: {
+            schema_version: 1,
+            scene: { theme: "dragon_chests", groups: 5, per_group: 4 },
+            options: [
+              { id: "a", text: "9" },
+              { id: "b", text: "20" },
+              { id: "c", text: "25" },
+            ],
+          },
+        },
+        correct: "b",
+        explanation: "5 baús com 4 moedas cada: 5 × 4 = 20 moedas.",
+        wrong: {
+          a: { message: "Opa! Você somou os blocos. Multiplicar é fazer grupos: precisamos de 5 grupos de 4.", animation: "merge_blocks" },
+          c: { message: "Quase lá! Você colocou uma moeda a mais em cada baú. Tire uma de cada e conte de novo!", animation: "extra_item_each_group" },
+        },
+      },
+      {
+        question: {
+          id: "00000000-0000-4000-8000-000000000102",
+          operation: "division",
+          difficulty: "easy",
+          question_type: "multiple_choice",
+          prompt: "Marina tem 12 balas e quer repartir igualmente entre 3 amigos. Quantas balas cada amigo recebe?",
+          content: {
+            schema_version: 1,
+            scene: { theme: "candy_friends", groups: 3, per_group: 4, total: 12 },
+            options: [
+              { id: "a", text: "9" },
+              { id: "b", text: "36" },
+              { id: "c", text: "4" },
+              { id: "d", text: "3" },
+            ],
+          },
+        },
+        correct: "c",
+        explanation: "Repartindo 12 balas entre 3 amigos, cada um fica com 4 balas, porque 12 ÷ 3 = 4.",
+        wrong: {
+          a: { message: "Parece que você subtraiu (12 - 3 = 9). Dividir é repartir em partes iguais.", animation: "regroup" },
+          b: { message: "Você multiplicou (12 × 3 = 36). Dividir é repartir 12 balas entre 3 amigos.", animation: "regroup" },
+          d: { message: "Atenção! O 3 é o número de amigos. Falta descobrir quantas balas cada um ganha.", animation: "regroup" },
+        },
+      },
+    ];
+
+    const view: QuestionView = {
+      prompt: document.querySelector<HTMLElement>("[data-prompt]")!,
+      scene: document.querySelector<HTMLElement>("[data-scene]")!,
+      options: document.querySelector<HTMLElement>("[data-options]")!,
+    };
+    const panel = document.querySelector<HTMLElement>("[data-feedback-panel]")!;
+    const nextButton = document.querySelector<HTMLButtonElement>("#proxima")!;
+
+    let index = 0;
+    let lastCorrectMessage: string | undefined;
+
+    function show(i: number) {
+      const sample = samples[i];
+      clearFeedback(panel);
+      nextButton.hidden = true;
+
+      renderQuestion(view, sample.question, (optionId) => {
+        lockOptions(view, optionId);
+
+        const correct = optionId === sample.correct;
+        const result: AnswerResult = {
+          correct,
+          explanation: sample.explanation,
+          feedback: correct ? undefined : sample.wrong[optionId],
+        };
+        const feedback = buildFeedback(result, lastCorrectMessage);
+        if (feedback.tone === "success") lastCorrectMessage = feedback.message;
+
+        // Divisão: agora que respondeu, a cena mostra os grupos.
+        if (sample.question.operation === "division") {
+          renderScene(view.scene, sample.question.content.scene, "groups");
+        }
+
+        renderFeedback(panel, feedback);
+        playFeedback(view.scene, feedback.animation);
+        nextButton.hidden = false;
+      });
+    }
+
+    nextButton.addEventListener("click", () => {
+      index = (index + 1) % samples.length;
+      show(index);
+    });
+
+    show(index);
+  </script>
+</Layout>

@@ -24,6 +24,16 @@
   border-radius: 1rem;
 }
 
+/* Monte único: divisão antes da resposta, sem grupos visíveis */
+.scene .pile {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.3rem;
+  max-width: 16rem;
+  padding: 0.6rem;
+}
+
 .scene .block {
   width: 1.5rem;
   height: 1.5rem;
@@ -94,4 +104,45 @@
   .scene .block {
     animation: none !important;
   }
+}
+
+/* Painel de feedback: cor + ícone + texto, nunca só cor */
+.feedback-panel {
+  max-width: 32rem;
+  margin: 1rem auto;
+  padding: 0.75rem 1rem;
+  border: 3px solid transparent;
+  border-radius: 1rem;
+  font-size: 1.15rem;
+  line-height: 1.4;
+}
+
+.feedback-panel[data-tone="idle"] {
+  display: none;
+}
+
+/* Contraste: texto escuro sobre fundo claro (acima de 7:1) */
+.feedback-panel[data-tone="success"] {
+  background: #e6f6ea;
+  border-color: #1f7a3d;
+  color: #14532d;
+}
+
+.feedback-panel[data-tone="try-again"] {
+  background: #fff3d6;
+  border-color: #b36b00;
+  color: #5c3d00;
+}
+
+.feedback-message {
+  margin: 0;
+  font-weight: 700;
+}
+
+.feedback-icon {
+  margin-right: 0.4rem;
+}
+
+.feedback-explanation {
+  margin: 0.5rem 0 0;
 }

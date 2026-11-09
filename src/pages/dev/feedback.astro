@@ -1,45 +1,92 @@
 ---
 import Layout from "../../layouts/Layout.astro";
 import BlockScene from "../../components/BlockScene.astro";
+import FeedbackPanel from "../../components/FeedbackPanel.astro";
 
 // Esta página é só para desenvolvimento.
 if (!import.meta.env.DEV) {
   return Astro.redirect("/");
 }
-
-const animations = [
-  { id: "soft_shake", label: "Balanço leve" },
-  { id: "merge_blocks", label: "Juntar grupos" },
-  { id: "extra_item_each_group", label: "Um a mais em cada" },
-  { id: "regroup", label: "Reagrupar" },
-  { id: "celebrate", label: "Acerto" },
-  { id: "none", label: "Nenhuma" },
-];
 ---
 
 <Layout title="Teste de feedback — GameMath">
   <main>
-    <h1>Teste das animações de feedback</h1>
-    <p>Exemplo: 5 baús com 4 moedas cada.</p>
+    <h1>Teste do feedback</h1>
 
-    <BlockScene groups={5} perGroup={4} />
+    <section id="demo-mult">
+      <h2>Multiplicação: 5 baús com 4 moedas cada</h2>
+      <BlockScene groups={5} perGroup={4} />
+      <FeedbackPanel />
 
-    <div>
-      {
-        animations.map((a) => (
-          <button type="button" data-play={a.id}>{a.label}</button>
-        ))
-      }
-    </div>
+      <div>
+        <button type="button" data-sim="certo">Simular acerto</button>
+        <button type="button" data-sim="somou">Simular erro: somou</button>
+        <button type="button" data-sim="umamais">Simular erro: um a mais</button>
+        <button type="button" data-sim="semfeedback">Simular erro sem mensagem</button>
+        <button type="button" data-sim="limpar">Limpar painel</button>
+      </div>
+    </section>
+
+    <section>
+      <h2>Divisão: 12 balas entre 3 amigos</h2>
+
+      <h3>Antes de responder (modo pile)</h3>
+      <BlockScene groups={3} perGroup={4} total={12} mode="pile" />
+
+      <h3>Depois de responder (modo groups)</h3>
+      <BlockScene groups={3} perGroup={4} />
+    </section>
   </main>
 
   <script>
-    import { playFeedback, type SceneAnimation } from "../../lib/feedback";
+    import { playFeedback } from "../../lib/feedback";
+    import { buildFeedback } from "../../lib/messages";
+    import { clearFeedback, renderFeedback } from "../../lib/feedback-panel";
+    import type { AnswerResult } from "../../lib/questions/types";
 
-    const scene = document.querySelector<HTMLElement>("[data-scene]")!;
-    document.querySelectorAll<HTMLButtonElement>("[data-play]").forEach((button) => {
+    const scene = document.querySelector<HTMLElement>("#demo-mult [data-scene]")!;
+    const panel = document.querySelector<HTMLElement>("[data-feedback-panel]")!;
+
+    const explanation = "5 baús com 4 moedas cada: 5 × 4 = 20 moedas.";
+
+    // Simula o que o servidor devolveria (mesmo formato do AnswerResult).
+    const simulations: Record<string, AnswerResult> = {
+      certo: { correct: true, explanation },
+      somou: {
+        correct: false,
+        explanation,
+        feedback: {
+          message: "Opa! Você somou os blocos. Multiplicar é fazer grupos: precisamos de 5 grupos de 4.",
+          animation: "merge_blocks",
+        },
+      },
+      umamais: {
+        correct: false,
+        explanation,
+        feedback: {
+          message: "Quase lá! Você colocou uma moeda a mais em cada baú. Tire uma de cada e conte de novo!",
+          animation: "extra_item_each_group",
+        },
+      },
+      semfeedback: { correct: false, explanation },
+    };
+
+    let lastCorrectMessage: string | undefined;
+
+    document.querySelectorAll<HTMLButtonElement>("[data-sim]").forEach((button) => {
       button.addEventListener("click", () => {
-        playFeedback(scene, button.dataset.play as SceneAnimation);
+        const key = button.dataset.sim!;
+
+        if (key === "limpar") {
+          clearFeedback(panel);
+          return;
+        }
+
+        const feedback = buildFeedback(simulations[key], lastCorrectMessage);
+        if (feedback.tone === "success") lastCorrectMessage = feedback.message;
+
+        renderFeedback(panel, feedback);
+        playFeedback(scene, feedback.animation);
       });
     });
   </script>

@@ -1,0 +1,22 @@
+---
+import "../styles/feedback.css";
+---
+
+<!--
+  A região precisa existir (vazia) antes de receber texto.
+  Assim o leitor de tela anuncia a mudança de conteúdo.
+-->
+<div
+  class="feedback-panel"
+  data-feedback-panel
+  data-tone="idle"
+  role="status"
+  aria-live="polite"
+  aria-atomic="true"
+>
+  <p class="feedback-message">
+    <span class="feedback-icon" data-feedback-icon aria-hidden="true"></span>
+    <span data-feedback-message></span>
+  </p>
+  <p class="feedback-explanation" data-feedback-explanation></p>
+</div>
