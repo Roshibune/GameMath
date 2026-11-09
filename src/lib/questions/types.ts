@@ -47,3 +47,13 @@ export interface AnswerResult {
   explanation: string;
   feedback?: { message: string; animation: FeedbackAnimation };
 }
+
+/** Questão como o navegador a recebe do banco. Não tem gabarito. */
+export interface PublicQuestion {
+  id: string;
+  operation: Operation;
+  difficulty: Difficulty;
+  question_type: "multiple_choice";
+  prompt: string;
+  content: PublicQuestionContent;
+}
