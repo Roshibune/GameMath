@@ -1,0 +1,64 @@
+:root {
+  --focus-ring: #1d4ed8;
+  --text: #1f2937;
+  --bg: #ffffff;
+  --tap-size: 44px;
+}
+
+html {
+  font-size: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, "Segoe UI", Roboto, Arial, sans-serif;
+  font-size: 1.125rem;
+  line-height: 1.5;
+}
+
+/* Foco do teclado: anel grosso e com contraste, igual em todos os navegadores */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 3px;
+  border-radius: 0.25rem;
+}
+
+/* Alvos de toque mínimos (Chromebook com tela sensível ao toque) */
+button,
+[role="button"],
+input[type="submit"] {
+  min-width: var(--tap-size);
+  min-height: var(--tap-size);
+  padding: 0.5rem 1rem;
+  font: inherit;
+  cursor: pointer;
+}
+
+/* Menu: links separados e com área de toque confortável */
+header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1.5rem;
+  padding: 0.5rem 1rem;
+}
+
+header nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+}
+
+header a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap-size);
+}
+
+main,
+footer {
+  padding: 0 1rem;
+}
