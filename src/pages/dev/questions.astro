@@ -17,12 +17,14 @@ if (!import.meta.env.DEV) {
 
     <button type="button" data-op="multiplication">Buscar multiplicação</button>
     <button type="button" data-op="division">Buscar divisão</button>
+    <button type="button" id="testar-check">Testar check-answer</button>
 
     <pre id="saida">Clique em um botão.</pre>
   </main>
 
   <script>
     import { fetchGameQuestions } from "../../lib/questions/api";
+    import { checkAnswer } from "../../lib/questions/server";
     import type { Operation } from "../../lib/questions/types";
 
     const saida = document.querySelector<HTMLElement>("#saida")!;
@@ -39,6 +41,17 @@ if (!import.meta.env.DEV) {
           saida.textContent = "Erro: " + (e instanceof Error ? e.message : String(e));
         }
       });
+    });
+
+    // Usa a questão mult-facil-001 e a alternativa "a" (um distrator).
+    document.querySelector("#testar-check")!.addEventListener("click", async () => {
+      saida.textContent = "Carregando...";
+      try {
+        const result = await checkAnswer("00000000-0000-4000-8000-000000000001", "a");
+        saida.textContent = "Resposta do servidor:\n\n" + JSON.stringify(result, null, 2);
+      } catch (e) {
+        saida.textContent = "Erro: " + (e instanceof Error ? e.message : String(e));
+      }
     });
   </script>
 </Layout>

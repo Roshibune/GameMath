@@ -57,3 +57,18 @@ export interface PublicQuestion {
   prompt: string;
   content: PublicQuestionContent;
 }
+
+/** Uma resposta dada pelo aluno durante a partida. */
+export interface SubmittedAnswer {
+  question_id: string;
+  option_id: string;
+}
+
+/** Retorno da função submit-attempt quando a partida é salva. */
+export interface AttemptResult {
+  ok: true;
+  attempt_id: string;
+  total_questions: number;
+  correct_answers: number;
+  completed_at: string;
+}
