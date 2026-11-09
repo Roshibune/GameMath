@@ -24,6 +24,16 @@
   border-radius: 1rem;
 }
 
+/* Monte único: divisão antes da resposta, sem grupos visíveis */
+.scene .pile {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.3rem;
+  max-width: 16rem;
+  padding: 0.6rem;
+}
+
 .scene .block {
   width: 1.5rem;
   height: 1.5rem;

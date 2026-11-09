@@ -20,23 +20,36 @@ const animations = [
 <Layout title="Teste de feedback — GameMath">
   <main>
     <h1>Teste das animações de feedback</h1>
-    <p>Exemplo: 5 baús com 4 moedas cada.</p>
 
-    <BlockScene groups={5} perGroup={4} />
+    <section id="demo-mult">
+      <h2>Multiplicação: 5 baús com 4 moedas cada</h2>
+      <BlockScene groups={5} perGroup={4} />
 
-    <div>
-      {
-        animations.map((a) => (
-          <button type="button" data-play={a.id}>{a.label}</button>
-        ))
-      }
-    </div>
+      <div>
+        {
+          animations.map((a) => (
+            <button type="button" data-play={a.id}>{a.label}</button>
+          ))
+        }
+      </div>
+    </section>
+
+    <section>
+      <h2>Divisão: 12 balas entre 3 amigos</h2>
+
+      <h3>Antes de responder (modo pile)</h3>
+      <BlockScene groups={3} perGroup={4} total={12} mode="pile" />
+
+      <h3>Depois de responder (modo groups)</h3>
+      <BlockScene groups={3} perGroup={4} />
+    </section>
   </main>
 
   <script>
     import { playFeedback, type SceneAnimation } from "../../lib/feedback";
 
-    const scene = document.querySelector<HTMLElement>("[data-scene]")!;
+    // Os botões controlam só a cena da multiplicação.
+    const scene = document.querySelector<HTMLElement>("#demo-mult [data-scene]")!;
     document.querySelectorAll<HTMLButtonElement>("[data-play]").forEach((button) => {
       button.addEventListener("click", () => {
         playFeedback(scene, button.dataset.play as SceneAnimation);
