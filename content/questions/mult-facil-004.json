@@ -1,0 +1,50 @@
+{
+  "id": "00000000-0000-4000-8000-000000000006",
+  "operation": "multiplication",
+  "difficulty": "easy",
+  "question_type": "multiple_choice",
+  "is_active": false,
+  "prompt": "Na estante há 4 prateleiras, e cada prateleira tem 5 livros. Quantos livros há na estante?",
+  "explanation": "4 prateleiras com 5 livros cada: 4 × 5 = 20 livros.",
+  "content": {
+    "schema_version": 1,
+    "scene": {
+      "theme": "bookshelf",
+      "groups": 4,
+      "per_group": 5
+    },
+    "options": [
+      { "id": "a", "text": "9" },
+      { "id": "b", "text": "20" },
+      { "id": "c", "text": "24" },
+      { "id": "d", "text": "15" }
+    ]
+  },
+  "answer_key": {
+    "correct_option_id": "b",
+    "check": { "a": 4, "b": 5, "op": "*" },
+    "distractors": {
+      "a": {
+        "error_type": "added_instead_of_multiplied",
+        "feedback": {
+          "message": "Opa! Você somou 4 + 5. Multiplicar é juntar 4 grupos de 5 livros.",
+          "animation": "merge_blocks"
+        }
+      },
+      "c": {
+        "error_type": "adjacent_table_fact",
+        "feedback": {
+          "message": "Quase! Você colocou um livro a mais em cada prateleira. Conte de novo!",
+          "animation": "extra_item_each_group"
+        }
+      },
+      "d": {
+        "error_type": "adjacent_table_fact",
+        "feedback": {
+          "message": "Quase lá! Você contou uma prateleira a menos. São 4 prateleiras.",
+          "animation": "regroup"
+        }
+      }
+    }
+  }
+}

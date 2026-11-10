@@ -1,0 +1,50 @@
+{
+  "id": "00000000-0000-4000-8000-000000000007",
+  "operation": "multiplication",
+  "difficulty": "medium",
+  "question_type": "multiple_choice",
+  "is_active": false,
+  "prompt": "Cada pizza tem 8 fatias. Quantas fatias há em 5 pizzas?",
+  "explanation": "5 pizzas com 8 fatias cada: 5 × 8 = 40 fatias.",
+  "content": {
+    "schema_version": 1,
+    "scene": {
+      "theme": "pizza_slices",
+      "groups": 5,
+      "per_group": 8
+    },
+    "options": [
+      { "id": "a", "text": "13" },
+      { "id": "b", "text": "45" },
+      { "id": "c", "text": "40" },
+      { "id": "d", "text": "32" }
+    ]
+  },
+  "answer_key": {
+    "correct_option_id": "c",
+    "check": { "a": 5, "b": 8, "op": "*" },
+    "distractors": {
+      "a": {
+        "error_type": "added_instead_of_multiplied",
+        "feedback": {
+          "message": "Opa! Você somou 5 + 8. Multiplicar é juntar 5 grupos de 8 fatias.",
+          "animation": "merge_blocks"
+        }
+      },
+      "b": {
+        "error_type": "adjacent_table_fact",
+        "feedback": {
+          "message": "Quase! Você contou uma fatia a mais em cada pizza. Conte de novo!",
+          "animation": "extra_item_each_group"
+        }
+      },
+      "d": {
+        "error_type": "adjacent_table_fact",
+        "feedback": {
+          "message": "Quase lá! Você contou uma pizza a menos. Conte pizza por pizza.",
+          "animation": "regroup"
+        }
+      }
+    }
+  }
+}

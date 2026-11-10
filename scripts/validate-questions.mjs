@@ -35,6 +35,38 @@ function findForbiddenKeys(value, path = "content") {
   return [];
 }
 
+// Confere se o número de uma alternativa errada combina com o tipo de erro declarado.
+// Devolve um texto descrevendo o problema, ou null se estiver coerente.
+function checkDistractorValue(errorType, value, a, b, op) {
+  if (errorType === "other") return null; // "other" é a saída livre: não conferimos
+  if (!Number.isFinite(value) || !Number.isFinite(a) || !Number.isFinite(b)) return null;
+
+  const rules = {
+    added_instead_of_multiplied: { op: "*", valid: [a + b] },
+    multiplied_instead_of_divided: { op: "/", valid: [a * b] },
+    subtracted_instead_of_divided: { op: "/", valid: [a - b] },
+    divisor_dividend_confusion: { op: "/", valid: [b] },
+    adjacent_table_fact: {
+      op: null, // vale para as duas operações
+      valid:
+        op === "*"
+          ? [(a + 1) * b, (a - 1) * b, a * (b + 1), a * (b - 1)] // um grupo ou item a mais/menos
+          : [a / b + 1, a / b - 1], // resultado um a mais/menos
+    },
+  };
+
+  const rule = rules[errorType];
+  if (!rule) return null; // tipo desconhecido já é reportado em outro ponto
+
+  if (rule.op && rule.op !== op) {
+    return `error_type "${errorType}" só vale para contas com "${rule.op}", mas esta usa "${op}"`;
+  }
+  if (!rule.valid.includes(value)) {
+    return `o valor ${value} não combina com "${errorType}" (esperado: ${rule.valid.join(" ou ")})`;
+  }
+  return null;
+}
+
 export function validateQuestion(q) {
   const errors = [];
   const err = (msg) => errors.push(msg);
@@ -92,8 +124,10 @@ export function validateQuestion(q) {
     if (!d.feedback?.message?.trim()) err(`"${id}": feedback.message vazio`);
     else if (d.feedback.message.length > MAX_MESSAGE) err(`"${id}": mensagem acima de ${MAX_MESSAGE} caracteres`);
     if (!ANIMATIONS.includes(d.feedback?.animation)) err(`"${id}": animation inválida (${d.feedback?.animation})`);
-  }
-  for (const id of Object.keys(distractors)) {
+    const option = options.find((o) => o.id === id);
+    const problem = checkDistractorValue(d.error_type, Number(option?.text), a, b, op);
+    if (problem) err(`"${id}": ${problem}`);}
+    for (const id of Object.keys(distractors)) {
     if (!ids.includes(id)) err(`distrator "${id}" não corresponde a nenhuma alternativa`);
   }
 
