@@ -1,0 +1,334 @@
+---
+import Layout from "../layouts/Layout.astro";
+---
+
+<Layout title="Painel do professor — GameMath">
+  <main class="prof">
+    <p id="prof-loading" role="status">Carregando…</p>
+
+    <!-- Entrada do professor -->
+    <section id="prof-login" class="prof-card prof-narrow" hidden>
+      <h1>Área do professor</h1>
+      <form id="prof-form">
+        <label for="prof-email">E-mail</label>
+        <input id="prof-email" type="email" autocomplete="username" required />
+        <label for="prof-senha">Senha</label>
+        <input id="prof-senha" type="password" autocomplete="current-password" required />
+        <p id="prof-login-msg" class="prof-err" role="alert"></p>
+        <button type="submit" id="prof-entrar">Entrar</button>
+      </form>
+    </section>
+
+    <!-- Painel -->
+    <div id="prof-painel" hidden>
+      <div class="prof-top">
+        <div>
+          <h1>Painel da turma</h1>
+          <span id="prof-nome" class="prof-mut"></span>
+        </div>
+        <button type="button" id="prof-sair" class="prof-sec">Sair</button>
+      </div>
+
+      <section class="prof-card">
+        <h2>Código para os alunos se vincularem</h2>
+        <span id="prof-codigo" class="prof-code">…</span>
+        <button type="button" id="prof-copiar" class="prof-sec" disabled>Copiar</button>
+        <p id="prof-codigo-msg" class="prof-mut" role="status"></p>
+      </section>
+
+      <section class="prof-card">
+        <h2>Desempenho da turma</h2>
+        <div id="prof-resumo" class="prof-stats"></div>
+      </section>
+
+      <section class="prof-card">
+        <h2>Alunos vinculados</h2>
+        <p id="prof-lista-msg" class="prof-mut" role="status"></p>
+        <div class="prof-tw">
+          <table id="prof-tabela" hidden>
+            <thead>
+              <tr>
+                <th>Aluno</th><th>Partidas</th><th>Acertos</th>
+                <th>Multiplicação</th><th>Divisão</th><th>Última partida</th>
+              </tr>
+            </thead>
+            <tbody id="prof-corpo"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    // Modo de teste: com PUBLIC_USE_MOCK=true (e só em desenvolvimento) usa dados
+    // falsos de src/lib/supabase.mock.ts. Em produção, sempre usa o Supabase real.
+    const usarMock =
+      import.meta.env.DEV &&
+      (import.meta.env.PUBLIC_USE_MOCK === "true" ||
+        new URLSearchParams(location.search).get("mock") === "1");
+    const { supabase } = usarMock
+      ? await import("../lib/supabase.mock")
+      : await import("../lib/supabase");
+
+    type Attempt = {
+      student_id: string;
+      operation: "multiplication" | "division";
+      total_questions: number;
+      correct_answers: number;
+      completed_at: string;
+    };
+
+    const $ = <T extends HTMLElement>(id: string) =>
+      document.getElementById(id) as T;
+
+    const pct = (a: number, t: number) => (t > 0 ? Math.round((a / t) * 100) : null);
+    const fmtPct = (a: number, t: number) => {
+      const p = pct(a, t);
+      return p === null ? "—" : `${p}%`;
+    };
+    const fmtData = (iso: string | null) =>
+      iso ? new Date(iso).toLocaleDateString("pt-BR") : "—";
+
+    // Sempre textContent: nunca insere dados do banco como HTML.
+    function celula(texto: string): HTMLTableCellElement {
+      const td = document.createElement("td");
+      td.textContent = texto;
+      return td;
+    }
+
+    function mostrar(qual: "loading" | "login" | "painel") {
+      $("prof-loading").hidden = qual !== "loading";
+      $("prof-login").hidden = qual !== "login";
+      $("prof-painel").hidden = qual !== "painel";
+    }
+
+    function mostrarLogin(msg = "") {
+      $("prof-login-msg").textContent = msg;
+      mostrar("login");
+    }
+
+    // ---------- Código do professor (função teacher-code) ----------
+    async function carregarCodigo() {
+      const codigoEl = $("prof-codigo");
+      const msgEl = $("prof-codigo-msg");
+      const btn = $<HTMLButtonElement>("prof-copiar");
+      msgEl.textContent = "";
+      btn.disabled = true;
+
+      const { data, error } = await supabase.functions.invoke("teacher-code", {
+        method: "POST",
+      });
+
+      if (error || !data?.code) {
+        codigoEl.textContent = "—";
+        msgEl.textContent = "Não foi possível carregar o código. Tente recarregar a página.";
+        return;
+      }
+      codigoEl.textContent = data.code;
+      btn.disabled = false;
+    }
+
+    $("prof-copiar").addEventListener("click", async () => {
+      const msgEl = $("prof-codigo-msg");
+      try {
+        await navigator.clipboard.writeText($("prof-codigo").textContent ?? "");
+        msgEl.textContent = "Código copiado!";
+      } catch {
+        msgEl.textContent = "Não deu para copiar. Selecione o código e copie manualmente.";
+      }
+    });
+
+    // ---------- Aluno e desempenho ----------
+    // O banco (RLS) já devolve só os alunos e partidas deste professor.
+    async function carregarAlunos(teacherId: string) {
+      const msg = $("prof-lista-msg");
+      const tabela = $("prof-tabela");
+      const corpo = $("prof-corpo");
+      const resumo = $("prof-resumo");
+      corpo.replaceChildren();
+      resumo.replaceChildren();
+      tabela.hidden = true;
+      msg.textContent = "Carregando alunos…";
+
+      const { data: vinculos, error: e1 } = await supabase
+        .from("student_teacher_links")
+        .select("student_id")
+        .eq("teacher_id", teacherId)
+        .is("unlinked_at", null);
+
+      if (e1) {
+        msg.textContent = "Não foi possível carregar os alunos. Tente novamente.";
+        return;
+      }
+
+      const ids = (vinculos ?? []).map((v) => v.student_id as string);
+      if (ids.length === 0) {
+        msg.textContent = "Nenhum aluno vinculado ainda. Passe o código acima para a turma.";
+        montarResumo(resumo, 0, []);
+        return;
+      }
+
+      const [perfisRes, partidasRes] = await Promise.all([
+        supabase.from("profiles").select("user_id, nickname").in("user_id", ids),
+        supabase
+          .from("game_attempts")
+          .select("student_id, operation, total_questions, correct_answers, completed_at")
+          .in("student_id", ids)
+          .order("completed_at", { ascending: false }),
+      ]);
+
+      if (perfisRes.error || partidasRes.error) {
+        msg.textContent = "Não foi possível carregar o desempenho. Tente novamente.";
+        return;
+      }
+
+      const partidas = (partidasRes.data ?? []) as Attempt[];
+      const perfis = (perfisRes.data ?? []) as { user_id: string; nickname: string }[];
+      perfis.sort((a, b) => a.nickname.localeCompare(b.nickname, "pt-BR"));
+
+      for (const p of perfis) {
+        const minhas = partidas.filter((x) => x.student_id === p.user_id);
+        const soma = (f: (x: Attempt) => boolean, k: "correct_answers" | "total_questions") =>
+          minhas.filter(f).reduce((s, x) => s + x[k], 0);
+        const isMult = (x: Attempt) => x.operation === "multiplication";
+        const isDiv = (x: Attempt) => x.operation === "division";
+        const acertos = soma(() => true, "correct_answers");
+        const total = soma(() => true, "total_questions");
+
+        const tr = document.createElement("tr");
+        tr.append(
+          celula(p.nickname),
+          celula(String(minhas.length)),
+          celula(total ? `${acertos}/${total} (${fmtPct(acertos, total)})` : "—"),
+          celula(fmtPct(soma(isMult, "correct_answers"), soma(isMult, "total_questions"))),
+          celula(fmtPct(soma(isDiv, "correct_answers"), soma(isDiv, "total_questions"))),
+          celula(fmtData(minhas[0]?.completed_at ?? null)),
+        );
+        corpo.appendChild(tr);
+      }
+
+      msg.textContent = "";
+      tabela.hidden = false;
+      montarResumo(resumo, perfis.length, partidas);
+    }
+
+    function montarResumo(alvo: HTMLElement, alunos: number, partidas: Attempt[]) {
+      const soma = (f: (x: Attempt) => boolean, k: "correct_answers" | "total_questions") =>
+        partidas.filter(f).reduce((s, x) => s + x[k], 0);
+      const all = () => true;
+      const itens: [string, string][] = [
+        [String(alunos), "alunos vinculados"],
+        [String(partidas.length), "partidas jogadas"],
+        [fmtPct(soma(all, "correct_answers"), soma(all, "total_questions")), "acertos no geral"],
+        [
+          fmtPct(
+            soma((x) => x.operation === "multiplication", "correct_answers"),
+            soma((x) => x.operation === "multiplication", "total_questions"),
+          ),
+          "multiplicação",
+        ],
+        [
+          fmtPct(
+            soma((x) => x.operation === "division", "correct_answers"),
+            soma((x) => x.operation === "division", "total_questions"),
+          ),
+          "divisão",
+        ],
+      ];
+      alvo.replaceChildren();
+      for (const [valor, rotulo] of itens) {
+        const box = document.createElement("div");
+        box.className = "prof-stat";
+        const b = document.createElement("b");
+        b.textContent = valor;
+        const s = document.createElement("span");
+        s.className = "prof-mut";
+        s.textContent = rotulo;
+        box.append(b, s);
+        alvo.appendChild(box);
+      }
+    }
+
+    // ---------- Sessão ----------
+    async function abrirPainel(userId: string) {
+      mostrar("loading");
+      const { data: perfil, error } = await supabase
+        .from("profiles")
+        .select("role, nickname")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (error) {
+        mostrarLogin("Não foi possível carregar seu perfil. Tente novamente.");
+        return;
+      }
+      if (perfil?.role !== "teacher") {
+        await supabase.auth.signOut();
+        mostrarLogin("Esta área é exclusiva para professores.");
+        return;
+      }
+
+      $("prof-nome").textContent = perfil.nickname;
+      mostrar("painel");
+      await Promise.all([carregarCodigo(), carregarAlunos(userId)]);
+    }
+
+    $("prof-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const btn = $<HTMLButtonElement>("prof-entrar");
+      btn.disabled = true;
+      $("prof-login-msg").textContent = "";
+
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: $<HTMLInputElement>("prof-email").value.trim(),
+        password: $<HTMLInputElement>("prof-senha").value,
+      });
+
+      btn.disabled = false;
+      if (error || !data.user) {
+        $("prof-login-msg").textContent = "E-mail ou senha incorretos.";
+        return;
+      }
+      $<HTMLInputElement>("prof-senha").value = "";
+      await abrirPainel(data.user.id);
+    });
+
+    $("prof-sair").addEventListener("click", async () => {
+      await supabase.auth.signOut();
+      mostrarLogin();
+    });
+
+    // O Supabase guarda a sessão no navegador: o professor continua logado
+    // ao reabrir a página, até clicar em "Sair".
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      await abrirPainel(session.user.id);
+    } else {
+      mostrarLogin();
+    }
+  </script>
+</Layout>
+
+<style is:global>
+  .prof { max-width: 960px; margin: 0 auto; padding: 20px 16px; }
+  .prof h1 { font-size: 1.4rem; margin: 0 0 4px; }
+  .prof h2 { font-size: 1.05rem; margin: 0 0 12px; }
+  .prof-mut { color: #5d6b82; font-size: 0.9rem; }
+  .prof-card { border: 1px solid #dde3ee; border-radius: 12px; padding: 18px; margin-bottom: 16px; }
+  .prof-narrow { max-width: 380px; margin: 6vh auto 0; }
+  .prof label { display: block; font-weight: 600; margin: 12px 0 4px; }
+  .prof input { width: 100%; padding: 10px; border: 1px solid #b9c3d6; border-radius: 8px; font-size: 1rem; }
+  .prof button { font: inherit; padding: 9px 14px; border-radius: 8px; border: 1px solid #2457d6; background: #2457d6; color: #fff; cursor: pointer; }
+  .prof button.prof-sec { background: transparent; color: #2457d6; }
+  .prof button:disabled { opacity: 0.5; cursor: default; }
+  .prof-err { color: #c0392b; min-height: 1.2em; }
+  .prof-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+  .prof-code { font: 700 1.8rem ui-monospace, Consolas, monospace; letter-spacing: 0.15em; border: 2px dashed #2457d6; border-radius: 10px; padding: 8px 16px; display: inline-block; margin-right: 10px; }
+  .prof-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+  .prof-stat { background: #f1f4fa; border-radius: 10px; padding: 12px; }
+  .prof-stat b { font-size: 1.5rem; display: block; }
+  .prof-tw { overflow-x: auto; }
+  .prof table { width: 100%; border-collapse: collapse; min-width: 640px; }
+  .prof th, .prof td { text-align: left; padding: 10px 8px; border-bottom: 1px solid #dde3ee; }
+  .prof th { font-size: 0.8rem; color: #5d6b82; text-transform: uppercase; }
+</style>
