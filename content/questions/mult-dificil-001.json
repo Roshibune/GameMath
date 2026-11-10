@@ -1,0 +1,50 @@
+{
+  "id": "00000000-0000-4000-8000-000000000008",
+  "operation": "multiplication",
+  "difficulty": "hard",
+  "question_type": "multiple_choice",
+  "is_active": false,
+  "prompt": "No auditório há 7 fileiras de cadeiras, com 8 cadeiras em cada fileira. Quantas cadeiras há no auditório?",
+  "explanation": "7 fileiras com 8 cadeiras cada: 7 × 8 = 56 cadeiras.",
+  "content": {
+    "schema_version": 1,
+    "scene": {
+      "theme": "auditorium_rows",
+      "groups": 7,
+      "per_group": 8
+    },
+    "options": [
+      { "id": "a", "text": "15" },
+      { "id": "b", "text": "63" },
+      { "id": "c", "text": "56" },
+      { "id": "d", "text": "48" }
+    ]
+  },
+  "answer_key": {
+    "correct_option_id": "c",
+    "check": { "a": 7, "b": 8, "op": "*" },
+    "distractors": {
+      "a": {
+        "error_type": "added_instead_of_multiplied",
+        "feedback": {
+          "message": "Opa! Você somou 7 + 8. Multiplicar é juntar 7 grupos de 8 cadeiras.",
+          "animation": "merge_blocks"
+        }
+      },
+      "b": {
+        "error_type": "adjacent_table_fact",
+        "feedback": {
+          "message": "Quase! Você colocou uma cadeira a mais em cada fileira. Conte de novo!",
+          "animation": "extra_item_each_group"
+        }
+      },
+      "d": {
+        "error_type": "adjacent_table_fact",
+        "feedback": {
+          "message": "Quase lá! Você contou uma fileira a menos. São 7 fileiras.",
+          "animation": "regroup"
+        }
+      }
+    }
+  }
+}
