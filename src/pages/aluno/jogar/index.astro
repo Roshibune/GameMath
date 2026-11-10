@@ -1,0 +1,55 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+---
+
+<Layout title="Escolher operação — GameMath">
+  <main class="escolha-operacao">
+    <h1>O que você quer praticar hoje?</h1>
+    <div class="opcoes-operacao">
+      <a href="/aluno/jogar/multiplicacao" class="opcao-operacao">
+        <span class="opcao-emoji" aria-hidden="true">✖️</span>
+        Multiplicação
+      </a>
+      <a href="/aluno/jogar/divisao" class="opcao-operacao">
+        <span class="opcao-emoji" aria-hidden="true">➗</span>
+        Divisão
+      </a>
+    </div>
+  </main>
+</Layout>
+
+<style>
+  .escolha-operacao {
+    padding: 1.5rem;
+    text-align: center;
+  }
+  .opcoes-operacao {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+  .opcao-operacao {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 9rem;
+    padding: 1.25rem 1.5rem;
+    border: 3px solid var(--fb-group-border, #c9d3ff);
+    border-radius: 1rem;
+    text-decoration: none;
+    color: inherit;
+    font-weight: bold;
+    font-size: 1.1rem;
+  }
+  .opcao-operacao:hover,
+  .opcao-operacao:focus-visible {
+    border-color: var(--fb-block, #4f7cff);
+    background: #f4f6ff;
+  }
+  .opcao-emoji {
+    font-size: 2rem;
+  }
+</style>
