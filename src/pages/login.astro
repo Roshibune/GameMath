@@ -1,0 +1,386 @@
+---
+import Layout from "../layouts/Layout.astro";
+---
+
+<Layout title="Entrar — GameMath">
+  <main>
+    <h1>GameMath</h1>
+    <p>Escolha como deseja entrar:</p>
+
+    <div>
+      <button id="escolher-aluno" type="button" aria-pressed="true">
+        Sou aluno
+      </button>
+      <button id="escolher-professor" type="button" aria-pressed="false">
+        Sou professor
+      </button>
+    </div>
+
+    <section id="area-aluno">
+      <h2>Área do aluno</h2>
+
+      <div>
+        <button id="aba-entrar-aluno" type="button" aria-pressed="true">
+          Entrar
+        </button>
+        <button id="aba-cadastrar-aluno" type="button" aria-pressed="false">
+          Criar conta
+        </button>
+      </div>
+
+      <form id="form-login-aluno">
+        <label for="apelido-login">Apelido</label>
+        <input
+          id="apelido-login"
+          name="nickname"
+          type="text"
+          maxlength="30"
+          autocomplete="username"
+          required
+        />
+
+        <label for="pin-login">PIN de 6 números</label>
+        <input
+          id="pin-login"
+          name="pin"
+          type="password"
+          inputmode="numeric"
+          pattern="[0-9]{6}"
+          minlength="6"
+          maxlength="6"
+          autocomplete="current-password"
+          required
+        />
+
+        <button type="submit">Entrar como aluno</button>
+      </form>
+
+      <form id="form-cadastro-aluno" hidden>
+        <label for="apelido-cadastro">Apelido</label>
+        <input
+          id="apelido-cadastro"
+          name="nickname"
+          type="text"
+          minlength="1"
+          maxlength="30"
+          autocomplete="username"
+          required
+        />
+
+        <label for="pin-cadastro">Crie um PIN de 6 números</label>
+        <input
+          id="pin-cadastro"
+          name="pin"
+          type="password"
+          inputmode="numeric"
+          pattern="[0-9]{6}"
+          minlength="6"
+          maxlength="6"
+          autocomplete="new-password"
+          required
+        />
+
+        <label for="codigo-professor">Código do professor</label>
+        <input
+          id="codigo-professor"
+          name="teacherCode"
+          type="text"
+          autocomplete="off"
+          required
+        />
+
+        <button type="submit">Criar conta</button>
+      </form>
+    </section>
+
+    <section id="area-professor" hidden>
+      <h2>Área do professor</h2>
+
+      <form id="form-login-professor">
+        <label for="email-professor">E-mail</label>
+        <input
+          id="email-professor"
+          name="email"
+          type="email"
+          autocomplete="username"
+          required
+        />
+
+        <label for="senha-professor">Senha</label>
+        <input
+          id="senha-professor"
+          name="password"
+          type="password"
+          autocomplete="current-password"
+          required
+        />
+
+        <button type="submit">Entrar como professor</button>
+      </form>
+    </section>
+
+    <p id="mensagem-login" role="status" aria-live="polite"></p>
+  </main>
+
+  <script>
+    import { supabase, makeStudentEmail } from "../lib/supabase";
+
+    type Role = "student" | "teacher";
+
+    const escolherAluno =
+      document.querySelector<HTMLButtonElement>("#escolher-aluno")!;
+    const escolherProfessor =
+      document.querySelector<HTMLButtonElement>("#escolher-professor")!;
+    const areaAluno = document.querySelector<HTMLElement>("#area-aluno")!;
+    const areaProfessor =
+      document.querySelector<HTMLElement>("#area-professor")!;
+    const mensagem =
+      document.querySelector<HTMLElement>("#mensagem-login")!;
+
+    const formLoginAluno =
+      document.querySelector<HTMLFormElement>("#form-login-aluno")!;
+    const formCadastroAluno =
+      document.querySelector<HTMLFormElement>("#form-cadastro-aluno")!;
+    const formLoginProfessor =
+      document.querySelector<HTMLFormElement>("#form-login-professor")!;
+
+    const abaEntrarAluno =
+      document.querySelector<HTMLButtonElement>("#aba-entrar-aluno")!;
+    const abaCadastrarAluno =
+      document.querySelector<HTMLButtonElement>("#aba-cadastrar-aluno")!;
+
+    function mostrarMensagem(texto: string) {
+      mensagem.textContent = texto;
+    }
+
+    function escolherPerfil(role: Role) {
+      const alunoSelecionado = role === "student";
+
+      areaAluno.hidden = !alunoSelecionado;
+      areaProfessor.hidden = alunoSelecionado;
+
+      escolherAluno.setAttribute(
+        "aria-pressed",
+        String(alunoSelecionado),
+      );
+      escolherProfessor.setAttribute(
+        "aria-pressed",
+        String(!alunoSelecionado),
+      );
+
+      mostrarMensagem("");
+    }
+
+    function escolherModoAluno(modo: "login" | "cadastro") {
+      const modoLogin = modo === "login";
+
+      formLoginAluno.hidden = !modoLogin;
+      formCadastroAluno.hidden = modoLogin;
+
+      abaEntrarAluno.setAttribute("aria-pressed", String(modoLogin));
+      abaCadastrarAluno.setAttribute("aria-pressed", String(!modoLogin));
+
+      mostrarMensagem("");
+    }
+
+    escolherAluno.addEventListener("click", () => {
+      escolherPerfil("student");
+    });
+
+    escolherProfessor.addEventListener("click", () => {
+      escolherPerfil("teacher");
+    });
+
+    abaEntrarAluno.addEventListener("click", () => {
+      escolherModoAluno("login");
+    });
+
+    abaCadastrarAluno.addEventListener("click", () => {
+      escolherModoAluno("cadastro");
+    });
+
+    async function conferirPerfilEEncaminhar(
+      userId: string,
+      papelEsperado?: Role,
+    ) {
+      const { data: perfil, error } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (error || !perfil) {
+        await supabase.auth.signOut();
+        mostrarMensagem(
+          "Não foi possível encontrar seu perfil. Peça ajuda ao responsável pelo cadastro.",
+        );
+        return;
+      }
+
+      if (perfil.role !== "student" && perfil.role !== "teacher") {
+        await supabase.auth.signOut();
+        mostrarMensagem("Este perfil não tem um tipo de acesso válido.");
+        return;
+      }
+
+      if (papelEsperado && perfil.role !== papelEsperado) {
+        await supabase.auth.signOut();
+        mostrarMensagem(
+          "Esse perfil é de outro tipo. Escolha a opção correspondente e tente novamente.",
+        );
+        return;
+      }
+
+      if (perfil.role === "student") {
+        window.location.assign("/aluno");
+      } else {
+        window.location.assign("/professor");
+      }
+    }
+
+    async function mensagemDoErroDaFuncao(error: unknown) {
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        "context" in error
+      ) {
+        const response = (error as { context?: unknown }).context;
+
+        if (response instanceof Response) {
+          try {
+            const body = await response.json();
+
+            if (typeof body?.error === "string") {
+              return body.error;
+            }
+          } catch {
+            // Se a resposta não vier em JSON, mostra a mensagem padrão.
+          }
+        }
+      }
+
+      return "Não foi possível criar a conta. Confira os dados e tente novamente.";
+    }
+
+    formLoginAluno.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      mostrarMensagem("");
+
+      const apelido =
+        document.querySelector<HTMLInputElement>("#apelido-login")!.value.trim();
+      const pin =
+        document.querySelector<HTMLInputElement>("#pin-login")!.value;
+
+      try {
+        const emailInterno = await makeStudentEmail(apelido);
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: emailInterno,
+          password: pin,
+        });
+
+        if (error || !data.user) {
+          mostrarMensagem("Apelido ou PIN incorreto.");
+          return;
+        }
+
+        await conferirPerfilEEncaminhar(data.user.id, "student");
+      } catch (error) {
+        console.error("Erro no login do aluno:", error);
+        mostrarMensagem("Não foi possível entrar agora. Tente novamente.");
+      }
+    });
+
+    formCadastroAluno.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      mostrarMensagem("");
+
+      const apelido =
+        document.querySelector<HTMLInputElement>("#apelido-cadastro")!.value.trim();
+      const pin =
+        document.querySelector<HTMLInputElement>("#pin-cadastro")!.value;
+      const teacherCode =
+        document.querySelector<HTMLInputElement>("#codigo-professor")!.value.trim();
+
+      const botao = formCadastroAluno.querySelector<HTMLButtonElement>(
+        'button[type="submit"]',
+      )!;
+      botao.disabled = true;
+
+      try {
+        const { error } = await supabase.functions.invoke("student-auth", {
+          body: { nickname: apelido, pin, teacherCode },
+        });
+
+        if (error) {
+          mostrarMensagem(await mensagemDoErroDaFuncao(error));
+          return;
+        }
+
+        const emailInterno = await makeStudentEmail(apelido);
+        const { data, error: loginError } =
+          await supabase.auth.signInWithPassword({
+            email: emailInterno,
+            password: pin,
+          });
+
+        if (loginError || !data.user) {
+          escolherModoAluno("login");
+          mostrarMensagem(
+            "Conta criada. Entre usando seu apelido e PIN.",
+          );
+          return;
+        }
+
+        await conferirPerfilEEncaminhar(data.user.id, "student");
+      } catch (error) {
+        console.error("Erro no cadastro do aluno:", error);
+        mostrarMensagem("Não foi possível criar a conta agora. Tente novamente.");
+      } finally {
+        botao.disabled = false;
+      }
+    });
+
+    formLoginProfessor.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      mostrarMensagem("");
+
+      const email =
+        document.querySelector<HTMLInputElement>("#email-professor")!.value.trim();
+      const password =
+        document.querySelector<HTMLInputElement>("#senha-professor")!.value;
+
+      const botao = formLoginProfessor.querySelector<HTMLButtonElement>(
+        'button[type="submit"]',
+      )!;
+      botao.disabled = true;
+
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (error || !data.user) {
+          mostrarMensagem("E-mail ou senha incorretos.");
+          return;
+        }
+
+        await conferirPerfilEEncaminhar(data.user.id, "teacher");
+      } catch (error) {
+        console.error("Erro no login do professor:", error);
+        mostrarMensagem("Não foi possível entrar agora. Tente novamente.");
+      } finally {
+        botao.disabled = false;
+      }
+    });
+
+    // Se já houver uma sessão, confere o perfil e segue para a área correspondente.
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (session) {
+      await conferirPerfilEEncaminhar(session.user.id);
+    }
+  </script>
+</Layout>
