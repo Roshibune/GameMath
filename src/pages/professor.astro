@@ -6,19 +6,6 @@ import Layout from "../layouts/Layout.astro";
   <main class="prof">
     <p id="prof-loading" role="status">Carregando…</p>
 
-    <!-- Entrada do professor -->
-    <section id="prof-login" class="prof-card prof-narrow" hidden>
-      <h1>Área do professor</h1>
-      <form id="prof-form">
-        <label for="prof-email">E-mail</label>
-        <input id="prof-email" type="email" autocomplete="username" required />
-        <label for="prof-senha">Senha</label>
-        <input id="prof-senha" type="password" autocomplete="current-password" required />
-        <p id="prof-login-msg" class="prof-err" role="alert"></p>
-        <button type="submit" id="prof-entrar">Entrar</button>
-      </form>
-    </section>
-
     <!-- Painel -->
     <div id="prof-painel" hidden>
       <div class="prof-top">
@@ -96,15 +83,22 @@ import Layout from "../layouts/Layout.astro";
       return td;
     }
 
-    function mostrar(qual: "loading" | "login" | "painel") {
+    // O login é feito na página de login do grupo (Integrante 1), que depois
+    // redireciona o professor para cá. Ajuste o endereço se for outro.
+    const LOGIN_URL = "/login";
+
+    function mostrar(qual: "loading" | "painel") {
       $("prof-loading").hidden = qual !== "loading";
-      $("prof-login").hidden = qual !== "login";
       $("prof-painel").hidden = qual !== "painel";
     }
 
-    function mostrarLogin(msg = "") {
-      $("prof-login-msg").textContent = msg;
-      mostrar("login");
+    function erroTela(msg: string) {
+      $("prof-loading").textContent = msg;
+      mostrar("loading");
+    }
+
+    function irParaLogin() {
+      window.location.href = LOGIN_URL;
     }
 
     // ---------- Código do professor (função teacher-code) ----------
@@ -138,7 +132,7 @@ import Layout from "../layouts/Layout.astro";
       }
     });
 
-    // ---------- Aluno e desempenho ----------
+    // ---------- Alunos e desempenho ----------
     // O banco (RLS) já devolve só os alunos e partidas deste professor.
     async function carregarAlunos(teacherId: string) {
       const msg = $("prof-lista-msg");
@@ -259,12 +253,11 @@ import Layout from "../layouts/Layout.astro";
         .maybeSingle();
 
       if (error) {
-        mostrarLogin("Não foi possível carregar seu perfil. Tente novamente.");
+        erroTela("Não foi possível carregar seu perfil. Tente recarregar a página.");
         return;
       }
       if (perfil?.role !== "teacher") {
-        await supabase.auth.signOut();
-        mostrarLogin("Esta área é exclusiva para professores.");
+        erroTela("Esta área é exclusiva para professores.");
         return;
       }
 
@@ -273,38 +266,30 @@ import Layout from "../layouts/Layout.astro";
       await Promise.all([carregarCodigo(), carregarAlunos(userId)]);
     }
 
-    $("prof-form").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const btn = $<HTMLButtonElement>("prof-entrar");
-      btn.disabled = true;
-      $("prof-login-msg").textContent = "";
-
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: $<HTMLInputElement>("prof-email").value.trim(),
-        password: $<HTMLInputElement>("prof-senha").value,
-      });
-
-      btn.disabled = false;
-      if (error || !data.user) {
-        $("prof-login-msg").textContent = "E-mail ou senha incorretos.";
-        return;
-      }
-      $<HTMLInputElement>("prof-senha").value = "";
-      await abrirPainel(data.user.id);
-    });
-
     $("prof-sair").addEventListener("click", async () => {
       await supabase.auth.signOut();
-      mostrarLogin();
+      irParaLogin();
     });
 
-    // O Supabase guarda a sessão no navegador: o professor continua logado
-    // ao reabrir a página, até clicar em "Sair".
+    // Modo de teste: entra sozinho como professor falso, sem a página de login.
+    // ?mock=1 (professor 1) | ?mock=1&user=2 (professor 2) | ?mock=1&user=aluno
+    if (usarMock) {
+      const u = new URLSearchParams(location.search).get("user");
+      const email =
+        u === "2" ? "prof2@teste.com" : u === "aluno" ? "aluno@teste.com" : "prof@teste.com";
+      const { data: atual } = await supabase.auth.getSession();
+      if (u || !atual.session) {
+        await supabase.auth.signInWithPassword({ email, password: "1234" });
+      }
+    }
+
+    // O Supabase guarda a sessão no navegador, então quem entrou na página de
+    // login chega aqui já logado. Sem sessão, volta para o login.
     const { data: { session } } = await supabase.auth.getSession();
     if (session) {
       await abrirPainel(session.user.id);
     } else {
-      mostrarLogin();
+      irParaLogin();
     }
   </script>
 </Layout>
@@ -315,13 +300,9 @@ import Layout from "../layouts/Layout.astro";
   .prof h2 { font-size: 1.05rem; margin: 0 0 12px; }
   .prof-mut { color: #5d6b82; font-size: 0.9rem; }
   .prof-card { border: 1px solid #dde3ee; border-radius: 12px; padding: 18px; margin-bottom: 16px; }
-  .prof-narrow { max-width: 380px; margin: 6vh auto 0; }
-  .prof label { display: block; font-weight: 600; margin: 12px 0 4px; }
-  .prof input { width: 100%; padding: 10px; border: 1px solid #b9c3d6; border-radius: 8px; font-size: 1rem; }
   .prof button { font: inherit; padding: 9px 14px; border-radius: 8px; border: 1px solid #2457d6; background: #2457d6; color: #fff; cursor: pointer; }
   .prof button.prof-sec { background: transparent; color: #2457d6; }
   .prof button:disabled { opacity: 0.5; cursor: default; }
-  .prof-err { color: #c0392b; min-height: 1.2em; }
   .prof-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
   .prof-code { font: 700 1.8rem ui-monospace, Consolas, monospace; letter-spacing: 0.15em; border: 2px dashed #2457d6; border-radius: 10px; padding: 8px 16px; display: inline-block; margin-right: 10px; }
   .prof-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
