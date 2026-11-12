@@ -479,8 +479,21 @@ import type {
       body: { operation, answers: respostas },
     });
 
-    if (error || !data?.ok) {
-      console.error(error ?? data);
+       if (error || !data?.ok) {
+      // Registra o motivo real da falha para facilitar o diagnóstico.
+      const resposta = (error as { context?: unknown } | null)?.context;
+      let status: number | string = "sem resposta do servidor";
+      let corpo = "";
+      if (resposta instanceof Response) {
+        status = resposta.status;
+        corpo = await resposta.text().catch(() => "");
+      }
+      console.error("[submit-attempt] falhou", {
+        status,
+        corpo,
+        error,
+        respostasEnviadas: respostas,
+      });
       mostrar("erro");
       return;
     }
