@@ -2,10 +2,81 @@
 import Layout from "../layouts/Layout.astro";
 ---
 
+<style>
+  .pagina-inicial {
+    display: grid;
+    min-height: 24rem;
+    align-content: center;
+    justify-items: center;
+    gap: 1rem;
+    background:
+      radial-gradient(circle at top right, #eaf0ff 0, transparent 45%),
+      #ffffff;
+    text-align: center;
+  }
+
+  .pagina-inicial h1 {
+    margin: 0;
+    color: var(--gm-primary-hover, #2445a8);
+    font-size: clamp(2.5rem, 10vw, 4.5rem);
+    letter-spacing: -0.04em;
+  }
+
+  .descricao-inicial {
+    max-width: 34rem;
+    margin: 0;
+    color: var(--gm-muted, #475569);
+    font-size: clamp(1.1rem, 3vw, 1.35rem);
+  }
+
+  .botao-inicial {
+    display: inline-flex;
+    min-height: var(--gm-tap-size, 44px);
+    align-items: center;
+    justify-content: center;
+    margin-top: 0.75rem;
+    padding: 0.75rem 1.5rem;
+    border: 2px solid var(--gm-primary, #3158c9);
+    border-radius: 0.85rem;
+    background: var(--gm-primary, #3158c9);
+    color: #ffffff;
+    font-weight: 750;
+    text-decoration: none;
+    transition:
+      background-color 150ms ease,
+      transform 150ms ease;
+  }
+
+  .botao-inicial:hover {
+    transform: translateY(-2px);
+    border-color: var(--gm-primary-hover, #2445a8);
+    background: var(--gm-primary-hover, #2445a8);
+    color: #ffffff;
+  }
+
+  @media (max-width: 38rem) {
+    .pagina-inicial {
+      min-height: 19rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .botao-inicial {
+      transition: none;
+    }
+
+    .botao-inicial:hover {
+      transform: none;
+    }
+  }
+</style>
+
 <Layout title="GameMath">
-  <main>
+  <main class="pagina-inicial">
     <h1>GameMath</h1>
-    <p>Pratique multiplicação e divisão de um jeito divertido.</p>
-    <a href="/login">Entrar ou criar conta</a>
+    <p class="descricao-inicial">
+      Pratique multiplicação e divisão de um jeito divertido.
+    </p>
+    <a class="botao-inicial" href="/login">Entrar ou criar conta</a>
   </main>
 </Layout>

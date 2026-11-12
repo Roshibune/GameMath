@@ -3,7 +3,7 @@ import Layout from "../layouts/Layout.astro";
 ---
 
 <Layout title="Entrar — GameMath">
-  <main>
+  <main class="pagina-login">
     <h1>GameMath</h1>
     <p>Escolha como deseja entrar:</p>
 
@@ -534,4 +534,94 @@ import Layout from "../layouts/Layout.astro";
       await conferirPerfilEEncaminhar(session.user.id);
     }
   </script>
+
+  <style>
+    .pagina-login {
+      max-width: 46rem;
+    }
+
+    .pagina-login > h1 {
+      text-align: center;
+    }
+
+    .pagina-login > div:first-of-type {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.75rem;
+      margin: 1.25rem 0;
+    }
+
+    .pagina-login section {
+      margin-top: 1.25rem;
+      padding: clamp(1rem, 4vw, 1.5rem);
+      border: 1px solid var(--gm-border, #d7e0f5);
+      border-radius: 1rem;
+      background: #f8faff;
+    }
+
+    .pagina-login section h2 {
+      margin-top: 0;
+    }
+
+    .pagina-login section > div {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .pagina-login button[aria-pressed="true"] {
+      border-color: var(--gm-primary, #3158c9);
+      background: var(--gm-primary, #3158c9);
+      color: #ffffff;
+    }
+
+    .pagina-login button[aria-pressed="false"] {
+      border-color: var(--gm-border, #d7e0f5);
+      background: #ffffff;
+      color: var(--gm-text, #172554);
+    }
+
+    .pagina-login form:not([hidden]) {
+      display: grid;
+      gap: 0.5rem;
+      max-width: 30rem;
+      margin: 1.25rem auto 0;
+    }
+
+    .pagina-login form label {
+      margin-top: 0.35rem;
+      font-weight: 650;
+    }
+
+    .pagina-login form input {
+      width: 100%;
+    }
+
+    .pagina-login form button[type="submit"] {
+      margin-top: 0.75rem;
+      border-color: var(--gm-primary, #3158c9);
+      background: var(--gm-primary, #3158c9);
+      color: #ffffff;
+    }
+
+    .pagina-login form button[type="submit"]:hover {
+      border-color: var(--gm-primary-hover, #2445a8);
+      background: var(--gm-primary-hover, #2445a8);
+    }
+
+    #mensagem-login {
+      min-height: 1.5rem;
+      margin-top: 1rem;
+      color: var(--gm-muted, #475569);
+      text-align: center;
+    }
+
+    @media (max-width: 38rem) {
+      .pagina-login > div:first-of-type > button {
+        flex: 1 1 8rem;
+      }
+    }
+  </style>
+
 </Layout>

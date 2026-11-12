@@ -4,78 +4,324 @@ import Layout from "../../layouts/Layout.astro";
 
 <Layout title="Perfil do aluno — GameMath">
   <main class="aluno-entrada">
-    <h1>Perfil do aluno</h1>
     <p id="mensagem" role="status" aria-live="polite">
       Verificando seu acesso...
     </p>
 
-    <section id="perfil" hidden>
-      <p>Apelido: <strong id="apelido"></strong></p>
+    <section id="perfil" class="perfil-aluno" hidden>
+      <div class="perfil-topo">
+        <div class="identificacao-aluno">
+          <div id="avatar" class="avatar-aluno" aria-hidden="true">🙂</div>
+          <div>
+            <p class="etiqueta-perfil">MEU PERFIL</p>
+            <h1 id="apelido"></h1>
+          </div>
+        </div>
 
-      <h2>Professor</h2>
-      <p id="vinculo">Carregando vínculo...</p>
-
-      <button id="desvincular" type="button" hidden>
-        Trocar de professor
-      </button>
-
-      <form id="form-vincular" hidden>
-        <label for="codigo-professor">Código do novo professor</label>
-        <input
-          id="codigo-professor"
-          name="teacherCode"
-          type="text"
-          autocomplete="off"
-          required
-        />
-        <button type="submit">Vincular ao professor</button>
-      </form>
-
-      <p>
-        <a class="botao-principal" href="/aluno/jogar">
-          Começar a jogar
+        <a class="botao-jogar" href="/aluno/jogar">
+          <span aria-hidden="true">🎮</span>
+          Jogar agora
         </a>
-      </p>
+      </div>
 
-      <button id="sair" type="button">Sair da conta</button>
+      <section class="cartao-professor" aria-labelledby="titulo-professor">
+        <h2 id="titulo-professor">Minha turma</h2>
+
+        <p class="linha-professor">
+          <strong>PROFESSOR:</strong>
+          <span id="vinculo">Carregando vínculo...</span>
+        </p>
+
+        <button id="desvincular" type="button" hidden>
+          Trocar de professor
+        </button>
+
+        <form id="form-vincular" hidden>
+          <label for="codigo-professor">Código do novo professor</label>
+          <input
+            id="codigo-professor"
+            name="teacherCode"
+            type="text"
+            autocomplete="off"
+            required
+          />
+          <button type="submit">Vincular ao professor</button>
+        </form>
+      </section>
+
+      <section class="cartao-desempenho" aria-labelledby="titulo-desempenho">
+        <h2 id="titulo-desempenho">Meu desempenho</h2>
+        <p id="mensagem-partidas" role="status">
+          Carregando suas partidas...
+        </p>
+
+        <div class="grade-desempenho">
+          <article class="cartao-operacao">
+            <h3><span aria-hidden="true">✖️</span> Multiplicação</h3>
+            <p><strong id="mult-acertos">0</strong> acertos</p>
+            <p><strong id="mult-erros">0</strong> erros</p>
+            <p><strong id="mult-percentual">0%</strong> de acertos</p>
+          </article>
+
+          <article class="cartao-operacao">
+            <h3><span aria-hidden="true">➗</span> Divisão</h3>
+            <p><strong id="div-acertos">0</strong> acertos</p>
+            <p><strong id="div-erros">0</strong> erros</p>
+            <p><strong id="div-percentual">0%</strong> de acertos</p>
+          </article>
+        </div>
+      </section>
+
+      <button id="sair" class="botao-sair" type="button">
+        Sair da conta
+      </button>
     </section>
   </main>
 </Layout>
 
 <style>
   .aluno-entrada {
-    padding: 1.5rem;
-    text-align: center;
+    max-width: 70rem;
   }
 
-  #perfil form {
+  #perfil[hidden] {
+    display: none;
+  }
+
+  #perfil:not([hidden]) {
     display: grid;
-    justify-items: center;
-    gap: 0.75rem;
-    margin: 1rem auto;
+    gap: 1.25rem;
+  }
+
+  .perfil-topo {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.25rem 0 0.75rem;
+  }
+
+  .identificacao-aluno {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .avatar-aluno {
+    display: grid;
+    width: 5.5rem;
+    height: 5.5rem;
+    flex: 0 0 auto;
+    place-items: center;
+    border: 4px solid #dce6ff;
+    border-radius: 50%;
+    background: linear-gradient(145deg, #eaf0ff, #d9e5ff);
+    color: var(--gm-primary-hover, #2445a8);
+    font-size: 2.6rem;
+    font-weight: 800;
+    box-shadow: 0 5px 14px rgb(31 45 93 / 10%);
+  }
+
+  .etiqueta-perfil {
+    margin: 0 0 0.2rem;
+    color: var(--gm-muted, #475569);
+    font-size: 0.85rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+  }
+
+  #apelido {
+    margin: 0;
+    color: var(--gm-primary-hover, #2445a8);
+    font-size: clamp(2rem, 6vw, 3rem);
+    line-height: 1.1;
+    overflow-wrap: anywhere;
+  }
+
+  .botao-jogar {
+    display: inline-flex;
+    min-width: 10rem;
+    min-height: 3.5rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.55rem;
+    padding: 0.8rem 1.2rem;
+    border: 2px solid var(--gm-primary, #3158c9);
+    border-radius: 0.9rem;
+    background: var(--gm-primary, #3158c9);
+    box-shadow: 0 5px 12px rgb(49 88 201 / 20%);
+    color: #ffffff;
+    font-size: 1.1rem;
+    font-weight: 800;
+    text-decoration: none;
+    transition:
+      background-color 150ms ease,
+      transform 150ms ease,
+      box-shadow 150ms ease;
+  }
+
+  .botao-jogar:hover {
+    transform: translateY(-2px);
+    border-color: var(--gm-primary-hover, #2445a8);
+    background: var(--gm-primary-hover, #2445a8);
+    box-shadow: 0 8px 16px rgb(49 88 201 / 25%);
+    color: #ffffff;
+  }
+
+  .cartao-professor,
+  .cartao-desempenho {
+    padding: clamp(1rem, 3vw, 1.5rem);
+    border: 1px solid var(--gm-border, #d7e0f5);
+    border-radius: 1rem;
+    background: #f8faff;
+  }
+
+  .cartao-professor h2,
+  .cartao-desempenho h2 {
+    margin: 0 0 1rem;
+    color: var(--gm-text, #172554);
+    font-size: 1.25rem;
+  }
+
+  .linha-professor {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.4rem 0.75rem;
+    margin: 0 0 0.75rem;
+    padding: 0.85rem 1rem;
+    border-radius: 0.75rem;
+    background: #edf2ff;
+  }
+
+  .linha-professor strong {
+    color: var(--gm-primary-hover, #2445a8);
+    font-size: 0.9rem;
+    letter-spacing: 0.04em;
+  }
+
+  #vinculo {
+    color: var(--gm-text, #172554);
+    font-size: 1.1rem;
+    font-weight: 750;
+  }
+
+  .grade-desempenho {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .cartao-operacao {
+    padding: 1rem;
+    border: 1px solid var(--gm-border, #d7e0f5);
+    border-top: 5px solid var(--gm-primary, #3158c9);
+    border-radius: 0.9rem;
+    background: #ffffff;
+  }
+
+  .cartao-operacao h3 {
+    margin: 0 0 0.85rem;
+    color: var(--gm-primary-hover, #2445a8);
+    font-size: 1.15rem;
+  }
+
+  .cartao-operacao p {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin: 0.45rem 0;
+    color: var(--gm-muted, #475569);
+  }
+
+  .cartao-operacao strong {
+    color: var(--gm-text, #172554);
+    font-size: 1.15rem;
+  }
+
+  #mensagem-partidas {
+    color: var(--gm-muted, #475569);
+  }
+
+  #perfil form:not([hidden]) {
+    display: grid;
+    justify-items: start;
+    gap: 0.6rem;
+    max-width: 28rem;
+    margin-top: 1rem;
+  }
+
+  #perfil form label {
+    font-weight: 700;
   }
 
   #perfil input {
-    padding: 0.6rem;
-    font: inherit;
+    width: 100%;
   }
 
-  #perfil button,
-  .botao-principal {
-    display: inline-block;
-    margin-top: 0.75rem;
-    padding: 0.75rem 1.25rem;
-    border: 0;
-    border-radius: 0.75rem;
+  #perfil button {
+    min-height: 44px;
+    padding: 0.65rem 1rem;
+    border: 2px solid var(--gm-border, #d7e0f5);
+    border-radius: 0.7rem;
+    background: #ffffff;
+    color: var(--gm-text, #172554);
     font: inherit;
-    font-weight: bold;
+    font-weight: 700;
     cursor: pointer;
   }
 
-  .botao-principal {
-    background: var(--fb-block, #4f7cff);
-    color: white;
-    text-decoration: none;
+  #perfil button:hover:not(:disabled) {
+    background: #edf2ff;
+  }
+
+  #perfil form button[type="submit"] {
+    border-color: var(--gm-primary, #3158c9);
+    background: var(--gm-primary, #3158c9);
+    color: #ffffff;
+  }
+
+  .botao-sair {
+    justify-self: end;
+  }
+
+  @media (max-width: 38rem) {
+    .perfil-topo {
+      align-items: stretch;
+    }
+
+    .identificacao-aluno {
+      align-items: flex-start;
+    }
+
+    .avatar-aluno {
+      width: 4.5rem;
+      height: 4.5rem;
+      font-size: 2.1rem;
+    }
+
+    .botao-jogar {
+      width: 100%;
+    }
+
+    .grade-desempenho {
+      grid-template-columns: 1fr;
+    }
+
+    .botao-sair {
+      justify-self: stretch;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .botao-jogar {
+      transition: none;
+    }
+
+    .botao-jogar:hover {
+      transform: none;
+    }
   }
 </style>
 
@@ -91,6 +337,9 @@ import Layout from "../../layouts/Layout.astro";
   const mensagem = document.querySelector<HTMLElement>("#mensagem")!;
   const perfil = document.querySelector<HTMLElement>("#perfil")!;
   const apelido = document.querySelector<HTMLElement>("#apelido")!;
+    const avatar = document.querySelector<HTMLElement>("#avatar")!;
+  const mensagemPartidas =
+    document.querySelector<HTMLElement>("#mensagem-partidas")!;
   const vinculo = document.querySelector<HTMLElement>("#vinculo")!;
   const botaoDesvincular =
     document.querySelector<HTMLButtonElement>("#desvincular")!;
@@ -132,8 +381,7 @@ import Layout from "../../layouts/Layout.astro";
     }
 
     if (data.linked) {
-      vinculo.textContent =
-        `Você está vinculado ao professor ${data.teacherNickname ?? ""}.`;
+      vinculo.textContent = data.teacherNickname ?? "Professor não identificado";
       botaoDesvincular.hidden = false;
       formulario.hidden = true;
     } else {
@@ -141,6 +389,66 @@ import Layout from "../../layouts/Layout.astro";
       botaoDesvincular.hidden = true;
       formulario.hidden = false;
     }
+  }
+
+  type PartidaAluno = {
+    operation: "multiplication" | "division";
+    total_questions: number;
+    correct_answers: number;
+    completed_at: string;
+  };
+
+  function preencherEstatistica(
+    prefixo: "mult" | "div",
+    partidas: PartidaAluno[],
+  ) {
+    const total = partidas.reduce(
+      (soma, partida) => soma + partida.total_questions,
+      0,
+    );
+    const acertos = partidas.reduce(
+      (soma, partida) => soma + partida.correct_answers,
+      0,
+    );
+    const erros = total - acertos;
+    const percentual = total > 0 ? Math.round((acertos / total) * 100) : 0;
+
+    document.querySelector<HTMLElement>(`#${prefixo}-acertos`)!.textContent =
+      String(acertos);
+    document.querySelector<HTMLElement>(`#${prefixo}-erros`)!.textContent =
+      String(erros);
+    document.querySelector<HTMLElement>(`#${prefixo}-percentual`)!.textContent =
+      `${percentual}%`;
+  }
+
+  async function carregarDesempenho(alunoId: string) {
+    const { data, error } = await supabase
+      .from("game_attempts")
+      .select("operation, total_questions, correct_answers, completed_at")
+      .eq("student_id", alunoId)
+      .order("completed_at", { ascending: false });
+
+    if (error) {
+      mensagemPartidas.textContent =
+        "Não foi possível carregar seu desempenho agora.";
+      return;
+    }
+
+    const partidas = (data ?? []) as PartidaAluno[];
+    const multiplicacao = partidas.filter(
+      (partida) => partida.operation === "multiplication",
+    );
+    const divisao = partidas.filter(
+      (partida) => partida.operation === "division",
+    );
+
+    preencherEstatistica("mult", multiplicacao);
+    preencherEstatistica("div", divisao);
+
+    mensagemPartidas.textContent =
+      partidas.length === 0
+        ? "Você ainda não concluiu uma partida. Jogue para ver seus resultados aqui."
+        : `Você já concluiu ${partidas.length} partida(s). Continue praticando!`;
   }
 
   async function carregarPerfil() {
@@ -182,10 +490,13 @@ import Layout from "../../layouts/Layout.astro";
     }
 
     apelido.textContent = dadosPerfil.nickname;
+    avatar.textContent =
+      dadosPerfil.nickname.trim().charAt(0).toLocaleUpperCase("pt-BR") || "🙂";
     perfil.hidden = false;
     mensagem.textContent = "";
 
     await carregarVinculo();
+    await carregarDesempenho(session.user.id);
   }
 
   botaoDesvincular.addEventListener("click", async () => {
