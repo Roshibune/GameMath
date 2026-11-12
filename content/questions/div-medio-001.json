@@ -3,7 +3,7 @@
   "operation": "division",
   "difficulty": "medium",
   "question_type": "multiple_choice",
-  "is_active": false,
+  "is_active": true,
   "prompt": "A loja tem 28 bolas e quer guardar todas em 4 caixas iguais. Quantas bolas vão em cada caixa?",
   "explanation": "Repartindo 28 bolas em 4 caixas iguais, cada caixa fica com 7 bolas, porque 28 ÷ 4 = 7.",
   "content": {

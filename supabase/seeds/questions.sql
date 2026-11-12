@@ -58,7 +58,7 @@ ON CONFLICT (question_id) DO UPDATE SET
 
 -- 00000000-0000-4000-8000-000000000103
 INSERT INTO public.questions (id, operation, difficulty, question_type, prompt, content, is_active)
-VALUES ('00000000-0000-4000-8000-000000000103', 'division', 'easy', 'multiple_choice', 'O padeiro tem 18 pães e coloca 3 pães em cada cesta. Quantas cestas ele usa?', '{"schema_version":1,"scene":{"theme":"bread_baskets","groups":6,"per_group":3,"total":18},"options":[{"id":"a","text":"6"},{"id":"b","text":"15"},{"id":"c","text":"3"},{"id":"d","text":"54"}]}'::jsonb, false)
+VALUES ('00000000-0000-4000-8000-000000000103', 'division', 'easy', 'multiple_choice', 'O padeiro tem 18 pães e coloca 3 pães em cada cesta. Quantas cestas ele usa?', '{"schema_version":1,"scene":{"theme":"bread_baskets","groups":6,"per_group":3,"total":18},"options":[{"id":"a","text":"6"},{"id":"b","text":"15"},{"id":"c","text":"3"},{"id":"d","text":"54"}]}'::jsonb, true)
 ON CONFLICT (id) DO UPDATE SET
   operation = EXCLUDED.operation,
   difficulty = EXCLUDED.difficulty,
@@ -75,7 +75,7 @@ ON CONFLICT (question_id) DO UPDATE SET
 
 -- 00000000-0000-4000-8000-000000000104
 INSERT INTO public.questions (id, operation, difficulty, question_type, prompt, content, is_active)
-VALUES ('00000000-0000-4000-8000-000000000104', 'division', 'medium', 'multiple_choice', 'A loja tem 28 bolas e quer guardar todas em 4 caixas iguais. Quantas bolas vão em cada caixa?', '{"schema_version":1,"scene":{"theme":"toy_boxes","groups":4,"per_group":7,"total":28},"options":[{"id":"a","text":"24"},{"id":"b","text":"7"},{"id":"c","text":"32"},{"id":"d","text":"4"}]}'::jsonb, false)
+VALUES ('00000000-0000-4000-8000-000000000104', 'division', 'medium', 'multiple_choice', 'A loja tem 28 bolas e quer guardar todas em 4 caixas iguais. Quantas bolas vão em cada caixa?', '{"schema_version":1,"scene":{"theme":"toy_boxes","groups":4,"per_group":7,"total":28},"options":[{"id":"a","text":"24"},{"id":"b","text":"7"},{"id":"c","text":"32"},{"id":"d","text":"4"}]}'::jsonb, true)
 ON CONFLICT (id) DO UPDATE SET
   operation = EXCLUDED.operation,
   difficulty = EXCLUDED.difficulty,
@@ -143,7 +143,7 @@ ON CONFLICT (question_id) DO UPDATE SET
 
 -- 00000000-0000-4000-8000-000000000002
 INSERT INTO public.questions (id, operation, difficulty, question_type, prompt, content, is_active)
-VALUES ('00000000-0000-4000-8000-000000000002', 'multiplication', 'easy', 'multiple_choice', 'A fada colheu 3 cestas de maçãs, e cada cesta tem 6 maçãs. Quantas maçãs ela colheu ao todo?', '{"schema_version":1,"scene":{"theme":"fairy_baskets","groups":3,"per_group":6},"options":[{"id":"a","text":"24"},{"id":"b","text":"9"},{"id":"c","text":"18"},{"id":"d","text":"15"}]}'::jsonb, false)
+VALUES ('00000000-0000-4000-8000-000000000002', 'multiplication', 'easy', 'multiple_choice', 'A fada colheu 3 cestas de maçãs, e cada cesta tem 6 maçãs. Quantas maçãs ela colheu ao todo?', '{"schema_version":1,"scene":{"theme":"fairy_baskets","groups":3,"per_group":6},"options":[{"id":"a","text":"24"},{"id":"b","text":"9"},{"id":"c","text":"18"},{"id":"d","text":"15"}]}'::jsonb, true)
 ON CONFLICT (id) DO UPDATE SET
   operation = EXCLUDED.operation,
   difficulty = EXCLUDED.difficulty,
@@ -160,7 +160,7 @@ ON CONFLICT (question_id) DO UPDATE SET
 
 -- 00000000-0000-4000-8000-000000000003
 INSERT INTO public.questions (id, operation, difficulty, question_type, prompt, content, is_active)
-VALUES ('00000000-0000-4000-8000-000000000003', 'multiplication', 'easy', 'multiple_choice', 'Na sala, 4 mesas têm 3 crianças sentadas em cada uma. Quantas crianças há nas mesas?', '{"schema_version":1,"scene":{"theme":"classroom_tables","groups":4,"per_group":3},"options":[{"id":"a","text":"12"},{"id":"b","text":"7"},{"id":"c","text":"16"},{"id":"d","text":"15"}]}'::jsonb, false)
+VALUES ('00000000-0000-4000-8000-000000000003', 'multiplication', 'easy', 'multiple_choice', 'Na sala, 4 mesas têm 3 crianças sentadas em cada uma. Quantas crianças há nas mesas?', '{"schema_version":1,"scene":{"theme":"classroom_tables","groups":4,"per_group":3},"options":[{"id":"a","text":"12"},{"id":"b","text":"7"},{"id":"c","text":"16"},{"id":"d","text":"15"}]}'::jsonb, true)
 ON CONFLICT (id) DO UPDATE SET
   operation = EXCLUDED.operation,
   difficulty = EXCLUDED.difficulty,
