@@ -30,16 +30,33 @@ import Layout from "../../layouts/Layout.astro";
 <script>
   import { supabase } from "../../lib/supabase";
 
-  const saudacao = document.querySelector("#saudacao")!;
+  const saudacao = document.querySelector<HTMLElement>("#saudacao")!;
 
-  const { data } = await supabase.auth.getSession();
-  if (!data.session) {
-    // Ainda não há sessão de aluno nesta página. O cadastro/login do aluno
-    // (apelido + PIN + código do professor) é tarefa do Integrante 1.
-    // Quando isso existir, ajustar para onde redirecionar quem chega aqui
-    // sem sessão (provavelmente para a tela de login).
-    saudacao.textContent = "Você precisa entrar antes de jogar.";
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
+
+  if (sessionError) {
+    saudacao.textContent = "Não foi possível verificar seu acesso. Tente novamente.";
+  } else if (!session) {
+    window.location.replace("/login");
   } else {
-    saudacao.textContent = "Pronto para praticar?";
+    const { data: perfil, error: perfilError } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("user_id", session.user.id)
+      .maybeSingle();
+
+    if (perfilError) {
+      saudacao.textContent = "Não foi possível verificar seu perfil. Tente novamente.";
+    } else if (perfil?.role === "teacher") {
+      window.location.replace("/professor");
+    } else if (perfil?.role === "student") {
+      saudacao.textContent = "Pronto para praticar?";
+    } else {
+      await supabase.auth.signOut();
+      window.location.replace("/login");
+    }
   }
 </script>
