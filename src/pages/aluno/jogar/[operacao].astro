@@ -248,23 +248,19 @@ const titulo = operation === "multiplication" ? "Multiplicação" : "Divisão";
 
 <script>
   import { supabase } from "../../../lib/supabase";
-  import { buildFeedback, buildResultMessage } from "../../../lib/messages";
-  import { playFeedback } from "../../../lib/feedback";
-  import type { Operation, AnswerResult } from "../../../lib/questions/types";
+import { buildFeedback, buildResultMessage } from "../../../lib/messages";
+import { playFeedback } from "../../../lib/feedback";
+import { fetchGameQuestions } from "../../../lib/questions/api";
+import { renderScene, sceneModeBefore } from "../../../lib/scene";
+import type {
+  Operation,
+  AnswerResult,
+  PublicQuestion,
+} from "../../../lib/questions/types";
 
   // Quantidade exigida pela função submit-attempt: hoje ela só aceita
   // partidas com exatamente 5 respostas.
   const PERGUNTAS_POR_PARTIDA = 5;
-
-  interface ActiveQuestion {
-    id: string;
-    prompt: string;
-    question_type: string;
-    content: {
-      scene: { groups: number; per_group: number | null };
-      options: { id: string; text: string }[];
-    };
-  }
 
   const main = document.querySelector("main")!;
   const operation = main.dataset.operation as Operation;
@@ -290,7 +286,7 @@ const titulo = operation === "multiplication" ? "Multiplicação" : "Divisão";
   const resultadoTexto = document.querySelector<HTMLElement>("#resultado-texto")!;
   const btnTentarDeNovo = document.querySelector<HTMLButtonElement>("#btn-tentar-de-novo")!;
 
-  let perguntas: ActiveQuestion[] = [];
+  let perguntas: PublicQuestion[] = [];
   let indiceAtual = 0;
   let respostas: { question_id: string; option_id: string }[] = [];
   let respondendo = false;
@@ -298,32 +294,6 @@ const titulo = operation === "multiplication" ? "Multiplicação" : "Divisão";
 
   function mostrar(estado: Estado) {
     for (const nome of estados) secoes[nome].hidden = nome !== estado;
-  }
-
-  // Desenha a cena de blocos (mesma estrutura do componente BlockScene.astro,
-  // mas gerada em JS porque a pergunta muda no navegador sem recarregar a página).
-  function renderizarCena(groups: number, perGroup: number | null): HTMLElement {
-    const scene = document.createElement("div");
-    scene.className = "scene";
-    scene.setAttribute("data-scene", "");
-    scene.setAttribute("role", "img");
-    scene.setAttribute(
-      "aria-label",
-      `${groups} grupos com ${perGroup ?? 0} itens em cada`,
-    );
-
-    for (let g = 0; g < groups; g++) {
-      const group = document.createElement("div");
-      group.className = "group";
-      group.style.setProperty("--i", String(g));
-      for (let i = 0; i < (perGroup ?? 0); i++) {
-        const block = document.createElement("span");
-        block.className = "block";
-        group.appendChild(block);
-      }
-      scene.appendChild(group);
-    }
-    return scene;
   }
 
     function mostrarErroDeAcesso(texto: string) {
@@ -386,10 +356,61 @@ const titulo = operation === "multiplication" ? "Multiplicação" : "Divisão";
 
     const temAcesso = await verificarAcessoAluno();
     if (!temAcesso) return;
+
+    try {
+      perguntas = await fetchGameQuestions(operation);
+    } catch (e) {
+      console.error(e);
+      mostrarErroDeAcesso("Não deu para carregar as perguntas agora. Tente de novo.");
+      return;
+    }
+
+    // A função submit-attempt só aceita partidas com exatamente 5 respostas.
+    if (perguntas.length < PERGUNTAS_POR_PARTIDA) {
+      mostrar("vazio");
+      return;
+    }
+
+    indiceAtual = 0;
+    respostas = [];
+    ultimaMensagemAcerto = undefined;
+    renderizarPergunta();
+    mostrar("jogo");
+  }
+
+    function renderizarPergunta() {
+    const pergunta = perguntas[indiceAtual];
+    respondendo = false;
+
+    progresso.textContent = `Pergunta ${indiceAtual + 1} de ${perguntas.length}`;
+    perguntaTexto.textContent = pergunta.prompt;
+
+    // Cena de blocos. Na divisão ela começa como "monte" (não revela a resposta).
+    const scene = document.createElement("div");
+    scene.className = "scene";
+    scene.setAttribute("data-scene", "");
+    scene.setAttribute("role", "img");
+    renderScene(scene, pergunta.content.scene, sceneModeBefore(operation));
+    cenaContainer.replaceChildren(scene);
+
+    // Alternativas como botões.
+    opcoesEl.replaceChildren(
+      ...pergunta.content.options.map((opcao) => {
+        const botao = document.createElement("button");
+        botao.type = "button";
+        botao.textContent = opcao.text;
+        botao.addEventListener("click", () => responder(pergunta, opcao.id, botao));
+        return botao;
+      }),
+    );
+
+    feedbackEl.hidden = true;
+    explicacaoEl.hidden = true;
+    btnProxima.hidden = true;
   }
 
   async function responder(
-    pergunta: ActiveQuestion,
+    pergunta: PublicQuestion,
     optionId: string,
     botaoClicado: HTMLButtonElement,
   ) {
