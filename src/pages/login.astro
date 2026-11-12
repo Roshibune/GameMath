@@ -94,29 +94,90 @@ import Layout from "../layouts/Layout.astro";
     </section>
 
     <section id="area-professor" hidden>
-      <h2>Área do professor</h2>
+        <h2>Área do professor</h2>
 
-      <form id="form-login-professor">
-        <label for="email-professor">E-mail</label>
-        <input
-          id="email-professor"
-          name="email"
-          type="email"
-          autocomplete="username"
-          required
-        />
+        <div>
+            <button
+            id="aba-entrar-professor"
+            type="button"
+            aria-pressed="true"
+            >
+            Entrar
+            </button>
+            <button
+            id="aba-cadastrar-professor"
+            type="button"
+            aria-pressed="false"
+            >
+            Criar conta
+            </button>
+        </div>
 
-        <label for="senha-professor">Senha</label>
-        <input
-          id="senha-professor"
-          name="password"
-          type="password"
-          autocomplete="current-password"
-          required
-        />
+        <form id="form-login-professor">
+            <label for="email-professor">E-mail</label>
+            <input
+            id="email-professor"
+            name="email"
+            type="email"
+            autocomplete="username"
+            required
+            />
 
-        <button type="submit">Entrar como professor</button>
-      </form>
+            <label for="senha-professor">Senha</label>
+            <input
+            id="senha-professor"
+            name="password"
+            type="password"
+            autocomplete="current-password"
+            required
+            />
+
+            <button type="submit">Entrar como professor</button>
+        </form>
+
+        <form id="form-cadastro-professor" hidden>
+            <label for="nome-cadastro-professor">Nome</label>
+            <input
+            id="nome-cadastro-professor"
+            name="nickname"
+            type="text"
+            minlength="1"
+            maxlength="30"
+            autocomplete="name"
+            required
+            />
+
+            <label for="email-cadastro-professor">E-mail</label>
+            <input
+            id="email-cadastro-professor"
+            name="email"
+            type="email"
+            autocomplete="email"
+            required
+            />
+
+            <label for="senha-cadastro-professor">Crie uma senha</label>
+            <input
+            id="senha-cadastro-professor"
+            name="password"
+            type="password"
+            minlength="8"
+            maxlength="72"
+            autocomplete="new-password"
+            required
+            />
+
+            <label for="convite-cadastro-professor">Código convite</label>
+            <input
+            id="convite-cadastro-professor"
+            name="inviteCode"
+            type="password"
+            autocomplete="off"
+            required
+            />
+
+            <button type="submit">Criar conta de professor</button>
+        </form>
     </section>
 
     <p id="mensagem-login" role="status" aria-live="polite"></p>
@@ -143,6 +204,12 @@ import Layout from "../layouts/Layout.astro";
       document.querySelector<HTMLFormElement>("#form-cadastro-aluno")!;
     const formLoginProfessor =
       document.querySelector<HTMLFormElement>("#form-login-professor")!;
+    const formCadastroProfessor =
+      document.querySelector<HTMLFormElement>("#form-cadastro-professor")!;
+    const abaEntrarProfessor =
+      document.querySelector<HTMLButtonElement>("#aba-entrar-professor")!;
+    const abaCadastrarProfessor =
+      document.querySelector<HTMLButtonElement>("#aba-cadastrar-professor")!;
 
     const abaEntrarAluno =
       document.querySelector<HTMLButtonElement>("#aba-entrar-aluno")!;
@@ -183,6 +250,18 @@ import Layout from "../layouts/Layout.astro";
       mostrarMensagem("");
     }
 
+    function escolherModoProfessor(modo: "login" | "cadastro") {
+      const modoLogin = modo === "login";
+
+      formLoginProfessor.hidden = !modoLogin;
+      formCadastroProfessor.hidden = modoLogin;
+
+      abaEntrarProfessor.setAttribute("aria-pressed", String(modoLogin));
+      abaCadastrarProfessor.setAttribute("aria-pressed", String(!modoLogin));
+
+      mostrarMensagem("");
+    }
+
     escolherAluno.addEventListener("click", () => {
       escolherPerfil("student");
     });
@@ -197,6 +276,14 @@ import Layout from "../layouts/Layout.astro";
 
     abaCadastrarAluno.addEventListener("click", () => {
       escolherModoAluno("cadastro");
+    });
+
+    abaEntrarProfessor.addEventListener("click", () => {
+      escolherModoProfessor("login");
+    });
+
+    abaCadastrarProfessor.addEventListener("click", () => {
+      escolherModoProfessor("cadastro");
     });
 
     async function conferirPerfilEEncaminhar(
@@ -372,6 +459,70 @@ import Layout from "../layouts/Layout.astro";
       } finally {
         botao.disabled = false;
       }
+    });
+
+    formCadastroProfessor.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      mostrarMensagem("");
+
+      const nickname =
+        document.querySelector<HTMLInputElement>(
+        "#nome-cadastro-professor",
+        )!.value.trim();
+
+      const email =
+        document.querySelector<HTMLInputElement>(
+        "#email-cadastro-professor",
+        )!.value.trim();
+
+      const password =
+        document.querySelector<HTMLInputElement>(
+        "#senha-cadastro-professor",
+        )!.value;
+
+      const inviteCode =
+        document.querySelector<HTMLInputElement>(
+        "#convite-cadastro-professor",
+        )!.value.trim();
+
+      const botao = formCadastroProfessor.querySelector<HTMLButtonElement>(
+        'button[type="submit"]',
+        )!;
+        botao.disabled = true;
+
+      try {
+        const { error: cadastroError } = await supabase.functions.invoke(
+        "teacher-auth",
+        {
+            body: { nickname, email, password, inviteCode },
+        },
+        );
+
+        if (cadastroError) {
+        mostrarMensagem(await mensagemDoErroDaFuncao(cadastroError));
+        return;
+        }
+
+        const { data, error: loginError } =
+        await supabase.auth.signInWithPassword({ email, password });
+
+        if (loginError || !data.user) {
+        escolherModoProfessor("login");
+        mostrarMensagem(
+            "Conta criada. Entre usando seu e-mail e senha.",
+        );
+        return;
+        }
+
+        await conferirPerfilEEncaminhar(data.user.id, "teacher");
+        } catch (error) {
+            console.error("Erro no cadastro do professor:", error);
+            mostrarMensagem(
+            "Não foi possível criar a conta agora. Tente novamente.",
+            );
+        } finally {
+            botao.disabled = false;
+        }
     });
 
     // Se já houver uma sessão, confere o perfil e segue para a área correspondente.
