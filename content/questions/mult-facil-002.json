@@ -3,7 +3,7 @@
   "operation": "multiplication",
   "difficulty": "easy",
   "question_type": "multiple_choice",
-  "is_active": true,
+  "is_active": false,
   "prompt": "A fada colheu 3 cestas de maçãs, e cada cesta tem 6 maçãs. Quantas maçãs ela colheu ao todo?",
   "explanation": "3 cestas com 6 maçãs cada: 3 × 6 = 18 maçãs.",
   "content": {

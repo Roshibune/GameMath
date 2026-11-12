@@ -3,7 +3,7 @@
   "operation": "multiplication",
   "difficulty": "hard",
   "question_type": "multiple_choice",
-  "is_active": false,
+  "is_active": true,
   "prompt": "No auditório há 7 fileiras de cadeiras, com 8 cadeiras em cada fileira. Quantas cadeiras há no auditório?",
   "explanation": "7 fileiras com 8 cadeiras cada: 7 × 8 = 56 cadeiras.",
   "content": {

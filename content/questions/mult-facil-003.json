@@ -3,7 +3,7 @@
   "operation": "multiplication",
   "difficulty": "easy",
   "question_type": "multiple_choice",
-  "is_active": true,
+  "is_active": false,
   "prompt": "Na sala, 4 mesas têm 3 crianças sentadas em cada uma. Quantas crianças há nas mesas?",
   "explanation": "4 mesas com 3 crianças cada: 4 × 3 = 12 crianças.",
   "content": {

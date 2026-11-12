@@ -3,7 +3,7 @@
   "operation": "division",
   "difficulty": "easy",
   "question_type": "multiple_choice",
-  "is_active": true,
+  "is_active": false,
   "prompt": "O padeiro tem 18 pães e coloca 3 pães em cada cesta. Quantas cestas ele usa?",
   "explanation": "Formando grupos de 3 com 18 pães, dá para encher 6 cestas, porque 18 ÷ 3 = 6.",
   "content": {
