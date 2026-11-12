@@ -47,6 +47,44 @@ export default {
       return json({ error: "Esta função está disponível apenas para alunos." }, 403);
     }
 
+    if (action === "status") {
+      const { data: link, error: linkError } = await admin
+        .from("student_teacher_links")
+        .select("teacher_id, linked_at")
+        .eq("student_id", studentId)
+        .is("unlinked_at", null)
+        .maybeSingle();
+
+      if (linkError) {
+        console.error("Erro ao consultar vínculo atual:", linkError);
+        return json({ error: "Não foi possível consultar seu vínculo agora." }, 500);
+      }
+
+      if (!link) {
+        return json({ linked: false });
+      }
+
+      const { data: teacher, error: teacherError } = await admin
+        .from("profiles")
+        .select("nickname")
+        .eq("user_id", link.teacher_id)
+        .eq("role", "teacher")
+        .maybeSingle();
+
+      if (teacherError || !teacher) {
+        console.error("Erro ao consultar perfil do professor:", teacherError);
+        return json({ error: "Não foi possível encontrar o professor vinculado." }, 500);
+      }
+
+      return json({
+        linked: true,
+        teacherNickname: teacher.nickname,
+        linkedAt: link.linked_at,
+      });
+    }
+
+if (action === "unlink") {
+
     if (action === "unlink") {
       const { data: link, error: unlinkError } = await admin
         .from("student_teacher_links")

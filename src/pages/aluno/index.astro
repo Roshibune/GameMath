@@ -2,11 +2,43 @@
 import Layout from "../../layouts/Layout.astro";
 ---
 
-<Layout title="Área do aluno — GameMath">
+<Layout title="Perfil do aluno — GameMath">
   <main class="aluno-entrada">
-    <h1>Área do aluno</h1>
-    <p id="saudacao">Carregando...</p>
-    <a class="botao-principal" href="/aluno/jogar">Começar a jogar</a>
+    <h1>Perfil do aluno</h1>
+    <p id="mensagem" role="status" aria-live="polite">
+      Verificando seu acesso...
+    </p>
+
+    <section id="perfil" hidden>
+      <p>Apelido: <strong id="apelido"></strong></p>
+
+      <h2>Professor</h2>
+      <p id="vinculo">Carregando vínculo...</p>
+
+      <button id="desvincular" type="button" hidden>
+        Trocar de professor
+      </button>
+
+      <form id="form-vincular" hidden>
+        <label for="codigo-professor">Código do novo professor</label>
+        <input
+          id="codigo-professor"
+          name="teacherCode"
+          type="text"
+          autocomplete="off"
+          required
+        />
+        <button type="submit">Vincular ao professor</button>
+      </form>
+
+      <p>
+        <a class="botao-principal" href="/aluno/jogar">
+          Começar a jogar
+        </a>
+      </p>
+
+      <button id="sair" type="button">Sair da conta</button>
+    </section>
   </main>
 </Layout>
 
@@ -15,48 +47,201 @@ import Layout from "../../layouts/Layout.astro";
     padding: 1.5rem;
     text-align: center;
   }
+
+  #perfil form {
+    display: grid;
+    justify-items: center;
+    gap: 0.75rem;
+    margin: 1rem auto;
+  }
+
+  #perfil input {
+    padding: 0.6rem;
+    font: inherit;
+  }
+
+  #perfil button,
   .botao-principal {
     display: inline-block;
-    margin-top: 1rem;
-    padding: 0.75rem 1.5rem;
+    margin-top: 0.75rem;
+    padding: 0.75rem 1.25rem;
+    border: 0;
     border-radius: 0.75rem;
+    font: inherit;
+    font-weight: bold;
+    cursor: pointer;
+  }
+
+  .botao-principal {
     background: var(--fb-block, #4f7cff);
     color: white;
     text-decoration: none;
-    font-weight: bold;
   }
 </style>
 
 <script>
   import { supabase } from "../../lib/supabase";
 
-  const saudacao = document.querySelector<HTMLElement>("#saudacao")!;
+  type LinkStatus = {
+    linked: boolean;
+    teacherNickname?: string;
+    linkedAt?: string;
+  };
 
-  const {
-    data: { session },
-    error: sessionError,
-  } = await supabase.auth.getSession();
+  const mensagem = document.querySelector<HTMLElement>("#mensagem")!;
+  const perfil = document.querySelector<HTMLElement>("#perfil")!;
+  const apelido = document.querySelector<HTMLElement>("#apelido")!;
+  const vinculo = document.querySelector<HTMLElement>("#vinculo")!;
+  const botaoDesvincular =
+    document.querySelector<HTMLButtonElement>("#desvincular")!;
+  const formulario =
+    document.querySelector<HTMLFormElement>("#form-vincular")!;
+  const campoCodigo =
+    document.querySelector<HTMLInputElement>("#codigo-professor")!;
+  const botaoSair =
+    document.querySelector<HTMLButtonElement>("#sair")!;
 
-  if (sessionError) {
-    saudacao.textContent = "Não foi possível verificar seu acesso. Tente novamente.";
-  } else if (!session) {
-    window.location.replace("/login");
-  } else {
-    const { data: perfil, error: perfilError } = await supabase
+  async function mensagemDoErro(error: unknown): Promise<string> {
+    if (typeof error === "object" && error !== null && "context" in error) {
+      const response = (error as { context?: unknown }).context;
+
+      if (response instanceof Response) {
+        try {
+          const body = await response.json();
+          if (typeof body?.error === "string") return body.error;
+        } catch {
+          // Usa a mensagem padrão se a resposta não vier em JSON.
+        }
+      }
+    }
+
+    return "Não foi possível concluir essa ação agora. Tente novamente.";
+  }
+
+  async function carregarVinculo() {
+    const { data, error } = await supabase.functions.invoke<LinkStatus>(
+      "student-link",
+      { body: { action: "status" } },
+    );
+
+    if (error || !data) {
+      mensagem.textContent = error
+        ? await mensagemDoErro(error)
+        : "Não foi possível carregar seu vínculo.";
+      return;
+    }
+
+    if (data.linked) {
+      vinculo.textContent =
+        `Você está vinculado ao professor ${data.teacherNickname ?? ""}.`;
+      botaoDesvincular.hidden = false;
+      formulario.hidden = true;
+    } else {
+      vinculo.textContent = "Você não está vinculado a um professor.";
+      botaoDesvincular.hidden = true;
+      formulario.hidden = false;
+    }
+  }
+
+  async function carregarPerfil() {
+    const {
+      data: { session },
+      error: erroSessao,
+    } = await supabase.auth.getSession();
+
+    if (erroSessao) {
+      mensagem.textContent = "Não foi possível verificar seu acesso. Tente novamente.";
+      return;
+    }
+
+    if (!session) {
+      window.location.replace("/login");
+      return;
+    }
+
+    const { data: dadosPerfil, error: erroPerfil } = await supabase
       .from("profiles")
-      .select("role")
+      .select("role, nickname")
       .eq("user_id", session.user.id)
       .maybeSingle();
 
-    if (perfilError) {
-      saudacao.textContent = "Não foi possível verificar seu perfil. Tente novamente.";
-    } else if (perfil?.role === "teacher") {
+    if (erroPerfil) {
+      mensagem.textContent = "Não foi possível carregar seu perfil. Tente novamente.";
+      return;
+    }
+
+    if (dadosPerfil?.role === "teacher") {
       window.location.replace("/professor");
-    } else if (perfil?.role === "student") {
-      saudacao.textContent = "Pronto para praticar?";
-    } else {
+      return;
+    }
+
+    if (dadosPerfil?.role !== "student") {
       await supabase.auth.signOut();
       window.location.replace("/login");
+      return;
     }
+
+    apelido.textContent = dadosPerfil.nickname;
+    perfil.hidden = false;
+    mensagem.textContent = "";
+
+    await carregarVinculo();
   }
+
+  botaoDesvincular.addEventListener("click", async () => {
+    const confirmou = window.confirm(
+      "Quer encerrar o vínculo atual? Depois você poderá informar o código de outro professor.",
+    );
+
+    if (!confirmou) return;
+
+    botaoDesvincular.disabled = true;
+
+    const { error } = await supabase.functions.invoke("student-link", {
+      body: { action: "unlink" },
+    });
+
+    if (error) {
+      mensagem.textContent = await mensagemDoErro(error);
+    } else {
+      mensagem.textContent = "Vínculo encerrado. Você pode escolher outro professor.";
+      await carregarVinculo();
+    }
+
+    botaoDesvincular.disabled = false;
+  });
+
+  formulario.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    mensagem.textContent = "";
+
+    const botao = formulario.querySelector<HTMLButtonElement>(
+      'button[type="submit"]',
+    )!;
+    botao.disabled = true;
+
+    const { error } = await supabase.functions.invoke("student-link", {
+      body: {
+        action: "link",
+        teacherCode: campoCodigo.value.trim(),
+      },
+    });
+
+    if (error) {
+      mensagem.textContent = await mensagemDoErro(error);
+    } else {
+      campoCodigo.value = "";
+      mensagem.textContent = "Vínculo criado.";
+      await carregarVinculo();
+    }
+
+    botao.disabled = false;
+  });
+
+  botaoSair.addEventListener("click", async () => {
+    await supabase.auth.signOut();
+    window.location.replace("/login");
+  });
+
+  await carregarPerfil();
 </script>
