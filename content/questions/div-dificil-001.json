@@ -1,0 +1,68 @@
+
+{
+  "id": "00000000-0000-4000-8000-000000000106",
+  "operation": "division",
+  "difficulty": "hard",
+  "question_type": "multiple_choice",
+  "is_active": true,
+  "prompt": "Uma biblioteca recebeu 72 livros novos. Para organizar a coleção, a bibliotecária vai distribuir todos os livros igualmente em 8 prateleiras. Quantos livros ficarão em cada prateleira?",
+  "explanation": "Precisamos repartir 72 livros igualmente entre 8 prateleiras. Como 72 ÷ 8 = 9, cada prateleira ficará com 9 livros.",
+  "content": {
+    "schema_version": 1,
+    "scene": {
+      "theme": "book_shelves",
+      "groups": 8,
+      "per_group": 9,
+      "total": 72
+    },
+    "options": [
+      {
+        "id": "opt_a",
+        "text": "9"
+      },
+      {
+        "id": "opt_b",
+        "text": "64"
+      },
+      {
+        "id": "opt_c",
+        "text": "576"
+      },
+      {
+        "id": "opt_d",
+        "text": "8"
+      }
+    ]
+  },
+  "answer_key": {
+    "correct_option_id": "opt_a",
+    "check": {
+      "a": 72,
+      "b": 8,
+      "op": "/"
+    },
+    "distractors": {
+      "opt_b": {
+        "error_type": "subtracted_instead_of_divided",
+        "feedback": {
+          "message": "Você subtraiu 72 - 8. Dividir é repartir os 72 livros igualmente.",
+          "animation": "regroup"
+        }
+      },
+      "opt_c": {
+        "error_type": "multiplied_instead_of_divided",
+        "feedback": {
+          "message": "Você multiplicou 72 × 8. Precisamos repartir os livros entre as prateleiras.",
+          "animation": "regroup"
+        }
+      },
+      "opt_d": {
+        "error_type": "divisor_dividend_confusion",
+        "feedback": {
+          "message": "O 8 indica o número de prateleiras. Falta descobrir quantos livros vão em cada uma.",
+          "animation": "regroup"
+        }
+      }
+    }
+  }
+}

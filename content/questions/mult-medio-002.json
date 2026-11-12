@@ -3,7 +3,7 @@
   "operation": "multiplication",
   "difficulty": "medium",
   "question_type": "multiple_choice",
-  "is_active": true,
+  "is_active":false,
   "prompt": "Cada pacote traz 9 figurinhas. Quantas figurinhas há em 3 pacotes?",
   "explanation": "3 pacotes com 9 figurinhas cada: 3 × 9 = 27 figurinhas.",
   "content": {

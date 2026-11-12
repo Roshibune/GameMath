@@ -3,7 +3,7 @@
   "operation": "division",
   "difficulty": "easy",
   "question_type": "multiple_choice",
-  "is_active": true,
+  "is_active": false,
   "prompt": "Quanto é 10 dividido por 2?",
   "explanation": "Dividir 10 por 2 significa separar 10 elementos em 2 grupos iguais, resultando em 5 em cada grupo.",
   "content": {
