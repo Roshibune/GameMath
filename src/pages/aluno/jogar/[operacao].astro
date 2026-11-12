@@ -233,63 +233,66 @@ const titulo = operation === "multiplication" ? "Multiplicação" : "Divisão";
     return scene;
   }
 
-  async function iniciar() {
-    mostrar("carregando");
-    respostas = [];
-    indiceAtual = 0;
-    ultimaMensagemAcerto = undefined;
+    function mostrarErroDeAcesso(texto: string) {
+    const paragrafo = secoes.erro.querySelector("p");
 
-    const { data, error } = await supabase
-      .from("questions")
-      .select("id, prompt, question_type, content")
-      .eq("operation", operation)
-      .eq("is_active", true)
-      .eq("question_type", "multiple_choice");
-
-    if (error) {
-      console.error(error);
-      mostrar("erro");
-      return;
+    if (paragrafo) {
+      paragrafo.textContent = texto;
     }
 
-    const todas = (data ?? []) as ActiveQuestion[];
-    if (todas.length < PERGUNTAS_POR_PARTIDA) {
-      mostrar("vazio");
-      return;
-    }
-
-    // Embaralha e pega exatamente a quantidade exigida pelo submit-attempt.
-    perguntas = todas
-      .sort(() => Math.random() - 0.5)
-      .slice(0, PERGUNTAS_POR_PARTIDA);
-
-    mostrar("jogo");
-    renderizarPergunta();
+    mostrar("erro");
   }
 
-  function renderizarPergunta() {
-    respondendo = false;
-    const pergunta = perguntas[indiceAtual];
+  async function verificarAcessoAluno(): Promise<boolean> {
+    const {
+      data: { session },
+      error: erroSessao,
+    } = await supabase.auth.getSession();
 
-    progresso.textContent = `Pergunta ${indiceAtual + 1} de ${perguntas.length}`;
-    perguntaTexto.textContent = pergunta.prompt;
-    feedbackEl.hidden = true;
-    explicacaoEl.hidden = true;
-    btnProxima.hidden = true;
-    opcoesEl.innerHTML = "";
-    cenaContainer.innerHTML = "";
-
-    cenaContainer.appendChild(
-      renderizarCena(pergunta.content.scene.groups, pergunta.content.scene.per_group),
-    );
-
-    for (const opcao of pergunta.content.options) {
-      const botao = document.createElement("button");
-      botao.type = "button";
-      botao.textContent = opcao.text;
-      botao.addEventListener("click", () => responder(pergunta, opcao.id, botao));
-      opcoesEl.appendChild(botao);
+    if (erroSessao) {
+      mostrarErroDeAcesso(
+        "Não foi possível verificar seu acesso. Tente novamente.",
+      );
+      return false;
     }
+
+    if (!session) {
+      window.location.replace("/login");
+      return false;
+    }
+
+    const { data: perfil, error: erroPerfil } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("user_id", session.user.id)
+      .maybeSingle();
+
+    if (erroPerfil) {
+      mostrarErroDeAcesso(
+        "Não foi possível verificar seu perfil. Tente novamente.",
+      );
+      return false;
+    }
+
+    if (perfil?.role === "teacher") {
+      window.location.replace("/professor");
+      return false;
+    }
+
+    if (perfil?.role !== "student") {
+      await supabase.auth.signOut();
+      window.location.replace("/login");
+      return false;
+    }
+
+    return true;
+  }
+
+  async function iniciar() {
+    mostrar("carregando");
+
+    const temAcesso = await verificarAcessoAluno();
+    if (!temAcesso) return;
   }
 
   async function responder(
