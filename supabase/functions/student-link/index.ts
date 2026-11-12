@@ -83,8 +83,6 @@ export default {
       });
     }
 
-if (action === "unlink") {
-
     if (action === "unlink") {
       const { data: link, error: unlinkError } = await admin
         .from("student_teacher_links")
@@ -133,7 +131,7 @@ if (action === "unlink") {
           { error: "Encerre seu vínculo atual antes de escolher outro professor." },
           409,
         );
-      }
+    }
 
       const { data: codeRow, error: codeError } = await admin
         .from("teacher_codes")
