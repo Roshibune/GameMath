@@ -24,6 +24,30 @@ import Layout from "../../layouts/Layout.astro";
         </a>
       </div>
 
+      <section class="cartao-titulacao" aria-labelledby="titulo-titulacao">
+        <div class="cabecalho-titulacao">
+          <div>
+            <h2 id="titulo-titulacao">Minha titulação</h2>
+            <p id="nome-titulacao">Carregando...</p>
+          </div>
+          <p class="total-pontos">
+            <strong id="total-pontos">—</strong> pontos
+          </p>
+        </div>
+
+        <p id="progresso-titulacao" role="status" aria-live="polite">
+          Carregando sua pontuação...
+        </p>
+
+        <progress
+          id="barra-titulacao"
+          class="barra-titulacao"
+          max="20"
+          value="0"
+          aria-label="Progresso para a próxima titulação"
+        ></progress>
+      </section>
+
       <section class="cartao-professor" aria-labelledby="titulo-professor">
         <h2 id="titulo-professor">Minha turma</h2>
 
@@ -169,6 +193,7 @@ import Layout from "../../layouts/Layout.astro";
     color: #ffffff;
   }
 
+  .cartao-titulacao,
   .cartao-professor,
   .cartao-desempenho {
     padding: clamp(1rem, 3vw, 1.5rem);
@@ -286,6 +311,56 @@ import Layout from "../../layouts/Layout.astro";
     justify-self: end;
   }
 
+  .cartao-titulacao {
+  border-color: #d9c78f;
+  background: linear-gradient(135deg, #fff9e8, #fffdf7);
+}
+
+.cabecalho-titulacao {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+}
+
+.cabecalho-titulacao h2 {
+  margin: 0 0 0.35rem;
+  color: var(--gm-text, #172554);
+  font-size: 1.2rem;
+}
+
+#nome-titulacao {
+  margin: 0;
+  color: #704b00;
+  font-size: clamp(1.4rem, 4vw, 1.8rem);
+  font-weight: 850;
+}
+
+.total-pontos {
+  margin: 0;
+  color: var(--gm-muted, #475569);
+  font-size: 1.05rem;
+}
+
+.total-pontos strong {
+  color: #704b00;
+  font-size: 1.6rem;
+}
+
+#progresso-titulacao {
+  margin: 1rem 0 0.4rem;
+  color: var(--gm-text, #172554);
+  font-weight: 650;
+}
+
+.barra-titulacao {
+  display: block;
+  width: 100%;
+  height: 1rem;
+  accent-color: #d49a17;
+}
+
   @media (max-width: 38rem) {
     .perfil-topo {
       align-items: stretch;
@@ -328,6 +403,11 @@ import Layout from "../../layouts/Layout.astro";
 <script>
   import { supabase } from "../../lib/supabase";
 
+  import {
+  calculateStudentPoints,
+  getStudentTitleProgress,
+} from "../../lib/titles";
+
   type LinkStatus = {
     linked: boolean;
     teacherNickname?: string;
@@ -340,6 +420,14 @@ import Layout from "../../layouts/Layout.astro";
     const avatar = document.querySelector<HTMLElement>("#avatar")!;
   const mensagemPartidas =
     document.querySelector<HTMLElement>("#mensagem-partidas")!;
+  const nomeTitulacao =
+    document.querySelector<HTMLElement>("#nome-titulacao")!;
+  const totalPontos =
+    document.querySelector<HTMLElement>("#total-pontos")!;
+  const progressoTitulacao =
+    document.querySelector<HTMLElement>("#progresso-titulacao")!;
+  const barraTitulacao =
+    document.querySelector<HTMLProgressElement>("#barra-titulacao")!;
   const vinculo = document.querySelector<HTMLElement>("#vinculo")!;
   const botaoDesvincular =
     document.querySelector<HTMLButtonElement>("#desvincular")!;
@@ -431,10 +519,18 @@ import Layout from "../../layouts/Layout.astro";
     if (error) {
       mensagemPartidas.textContent =
         "Não foi possível carregar seu desempenho agora.";
+      nomeTitulacao.textContent = "Indisponível";
+      totalPontos.textContent = "—";
+      progressoTitulacao.textContent =
+        "Não foi possível carregar sua titulação agora.";
+      barraTitulacao.hidden = true;
       return;
     }
 
     const partidas = (data ?? []) as PartidaAluno[];
+    const titulacao = getStudentTitleProgress(
+    calculateStudentPoints(partidas),
+    );
     const multiplicacao = partidas.filter(
       (partida) => partida.operation === "multiplication",
     );
@@ -444,6 +540,22 @@ import Layout from "../../layouts/Layout.astro";
 
     preencherEstatistica("mult", multiplicacao);
     preencherEstatistica("div", divisao);
+    nomeTitulacao.textContent = titulacao.current.name;
+    totalPontos.textContent = new Intl.NumberFormat("pt-BR").format(
+      titulacao.points,
+    );
+
+    if (titulacao.next) {
+      progressoTitulacao.textContent =
+        `Faltam ${titulacao.pointsToNext} pontos para ${titulacao.next.name}.`;
+      barraTitulacao.max = titulacao.progressRequired;
+      barraTitulacao.value = titulacao.progressPoints;
+    } else {
+      progressoTitulacao.textContent =
+        "Você alcançou a titulação máxima! Continue praticando.";
+      barraTitulacao.max = 1;
+      barraTitulacao.value = 1;
+    }
 
     mensagemPartidas.textContent =
       partidas.length === 0
