@@ -1,6 +1,8 @@
 ---
 import Layout from "../../../layouts/Layout.astro";
+import FeedbackPanel from "../../../components/FeedbackPanel.astro";
 import "../../../styles/feedback.css";
+import "../../../styles/game.css";
 import type { Operation } from "../../../lib/questions/types";
 
 export function getStaticPaths() {
@@ -22,53 +24,74 @@ const titulo = operation === "multiplication" ? "Multiplicação" : "Divisão";
 
 <Layout title={`${titulo} — GameMath`}>
   <main data-operation={operation} class="jogo-pagina">
-    <h1>{titulo}</h1>
+    <p id="mensagem-acesso" role="status" aria-live="polite">
+      Verificando seu acesso...
+    </p>
 
-    <div id="estado-carregando">Buscando perguntas...</div>
+    <div id="area-jogo" hidden>
+      <h1>{titulo}</h1>
 
-    <div id="estado-erro" hidden>
-      <p>Não deu para carregar ou salvar a partida agora. Tente de novo.</p>
-      <button id="btn-tentar-de-novo" type="button" class="botao-secundario">
-        Tentar de novo
-      </button>
+      <div id="estado-carregando">Buscando perguntas...</div>
+
+      <div id="estado-erro" hidden>
+        <p>Não deu para carregar ou salvar a partida agora. Tente de novo.</p>
+        <button id="btn-tentar-de-novo" type="button" class="botao-secundario">
+          Tentar de novo
+        </button>
+      </div>
+
+      <div id="estado-vazio" hidden>
+        <p>
+          Ainda não há perguntas suficientes de {titulo.toLowerCase()} para
+          jogar uma partida completa. Volte mais tarde!
+        </p>
+        <a href="/aluno/jogar" class="botao-secundario">Escolher outra operação</a>
+      </div>
+
+      <section id="jogo" class="game" hidden>
+        <p id="progresso" class="progresso"></p>
+        <h2
+          id="pergunta"
+          class="game-prompt"
+          tabindex="-1"
+          data-prompt
+        ></h2>
+        <div class="scene" data-scene role="img"></div>
+        <div
+          class="options"
+          data-options
+          role="group"
+          aria-labelledby="pergunta"
+        ></div>
+
+        <FeedbackPanel />
+
+        <button
+          id="btn-proxima"
+          type="button"
+          class="game-next botao-principal"
+          hidden
+        >
+          Próxima pergunta
+        </button>
+      </section>
+
+      <section id="resultado" hidden>
+        <h2>Resultado</h2>
+        <p id="resultado-texto" class="resultado-texto"></p>
+        <a href="/aluno/jogar" class="botao-principal">Jogar de novo</a>
+      </section>
     </div>
-
-    <div id="estado-vazio" hidden>
-      <p>
-        Ainda não há perguntas suficientes de {titulo.toLowerCase()} para jogar
-        uma partida completa. Volte mais tarde!
-      </p>
-      <a href="/aluno/jogar" class="botao-secundario">Escolher outra operação</a>
-    </div>
-
-    <section id="jogo" hidden>
-      <p id="progresso" class="progresso"></p>
-      <p id="pergunta-texto" class="pergunta-texto"></p>
-      <div id="cena-container"></div>
-      <div id="opcoes" class="opcoes"></div>
-      <p id="feedback" class="feedback" hidden></p>
-      <p id="explicacao" class="explicacao" hidden></p>
-      <button id="btn-proxima" type="button" class="botao-principal" hidden>
-        Próxima pergunta
-      </button>
-    </section>
-
-    <section id="resultado" hidden>
-      <h2>Resultado</h2>
-      <p id="resultado-texto" class="resultado-texto"></p>
-      <a href="/aluno/jogar" class="botao-principal">Jogar de novo</a>
-    </section>
   </main>
 </Layout>
 
 <style>
   .jogo-pagina {
-    max-width: 52rem;
+    max-width: 42rem;
     margin: 1.5rem auto;
   }
 
   .jogo-pagina > h1 {
-    margin-bottom: 1.5rem;
     text-align: center;
   }
 
@@ -76,18 +99,12 @@ const titulo = operation === "multiplication" ? "Multiplicação" : "Divisão";
   #estado-erro,
   #estado-vazio,
   #resultado {
-    max-width: 42rem;
     margin: 1rem auto;
-    padding: 1.25rem;
+    padding: clamp(1rem, 3vw, 1.5rem);
     border: 1px solid var(--gm-border, #d7e0f5);
-    border-radius: 1rem;
-    background: #f8faff;
+    border-radius: var(--gm-radius, 1.25rem);
+    background: var(--gm-surface, #ffffff);
     text-align: center;
-  }
-
-  #jogo {
-    max-width: 42rem;
-    margin: 0 auto;
   }
 
   .progresso {
@@ -96,153 +113,45 @@ const titulo = operation === "multiplication" ? "Multiplicação" : "Divisão";
     padding: 0.4rem 0.8rem;
     border-radius: 999px;
     background: #edf2ff;
-    color: #2445a8;
+    color: var(--gm-primary-hover, #2445a8);
     font-weight: 700;
   }
 
-  .pergunta-texto {
-    margin: 1.25rem 0;
-    color: var(--gm-text, #172554);
-    font-size: clamp(1.3rem, 4vw, 1.7rem);
-    font-weight: 750;
-    line-height: 1.35;
-  }
-
-  #cena-container {
-    margin: 1rem 0;
-  }
-
-  .opcoes {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.75rem;
-    margin: 1.25rem 0;
-  }
-
-  .opcoes button {
-    min-height: 4rem;
-    padding: 0.75rem;
-    border: 2px solid var(--gm-primary, #3158c9);
-    border-radius: 1rem;
-    background: #ffffff;
-    color: var(--gm-text, #172554);
-    font-size: 1.25rem;
-    font-weight: 750;
-    cursor: pointer;
-    transition:
-      background-color 150ms ease,
-      transform 150ms ease;
-  }
-
-  .opcoes button:hover:not(:disabled) {
-    background: #edf2ff;
-    transform: translateY(-2px);
-  }
-
-  .opcoes button:disabled {
-    cursor: default;
-  }
-
-  .opcoes button.certa {
-    border-color: #237044;
-    background: #e7f6ec;
-    color: #14532d;
-  }
-
-  .opcoes button.errada {
-    border-color: #b42318;
-    background: #fff0ee;
-    color: #7a271a;
-  }
-
-  .feedback {
-    margin: 1rem 0 0.5rem;
-    padding: 0.85rem 1rem;
-    border: 2px solid transparent;
-    border-radius: 1rem;
+  .resultado-texto {
     font-size: 1.1rem;
-    font-weight: 750;
-  }
-
-  .feedback.sucesso {
-    border-color: #237044;
-    background: #e7f6ec;
-    color: #14532d;
-  }
-
-  .feedback.tente-de-novo {
-    border-color: #b36b00;
-    background: #fff3d6;
-    color: #5c3d00;
-  }
-
-  .explicacao {
-    margin: 0.75rem 0;
-    padding: 0.9rem 1rem;
-    border-left: 5px solid var(--gm-primary, #3158c9);
-    border-radius: 0.5rem;
-    background: #f3f6ff;
-    color: var(--gm-text, #172554);
   }
 
   .botao-principal,
   .botao-secundario {
-    display: inline-block;
-    min-height: 2.75rem;
+    display: inline-flex;
+    min-height: var(--gm-tap-size, 44px);
+    align-items: center;
+    justify-content: center;
     margin-top: 0.75rem;
-    padding: 0.7rem 1.25rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.9rem;
     border: 2px solid transparent;
-    border-radius: 0.75rem;
+    font-weight: 800;
     font-size: 1rem;
-    font-weight: 750;
-    text-align: center;
     text-decoration: none;
     cursor: pointer;
   }
 
   .botao-principal {
+    border-color: var(--gm-primary, #3158c9);
     background: var(--gm-primary, #3158c9);
     color: #ffffff;
   }
 
   .botao-principal:hover {
+    border-color: var(--gm-primary-hover, #2445a8);
     background: var(--gm-primary-hover, #2445a8);
-    color: #ffffff;
   }
 
   .botao-secundario {
     border-color: var(--gm-border, #d7e0f5);
     background: #ffffff;
     color: var(--gm-text, #172554);
-  }
-
-  .botao-secundario:hover {
-    background: #edf2ff;
-  }
-
-  .resultado-texto {
-    font-size: 1.2rem;
-    font-weight: 650;
-  }
-
-  @media (max-width: 38rem) {
-    .opcoes {
-      grid-template-columns: 1fr;
-    }
-
-    .opcoes button {
-      min-height: 3.5rem;
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .opcoes button {
-      transition: none;
-    }
-
-    .opcoes button:hover:not(:disabled) {
-      transform: none;
-    }
   }
 </style>
 
@@ -265,6 +174,9 @@ import type {
   const main = document.querySelector("main")!;
   const operation = main.dataset.operation as Operation;
 
+  const mensagemAcesso = document.querySelector<HTMLElement>("#mensagem-acesso")!;
+  const areaJogo = document.querySelector<HTMLElement>("#area-jogo")!;
+
   const estados = ["carregando", "erro", "vazio", "jogo", "resultado"] as const;
   type Estado = (typeof estados)[number];
 
@@ -277,19 +189,22 @@ import type {
   };
 
   const progresso = document.querySelector<HTMLElement>("#progresso")!;
-  const perguntaTexto = document.querySelector<HTMLElement>("#pergunta-texto")!;
-  const cenaContainer = document.querySelector<HTMLElement>("#cena-container")!;
-  const opcoesEl = document.querySelector<HTMLElement>("#opcoes")!;
-  const feedbackEl = document.querySelector<HTMLElement>("#feedback")!;
-  const explicacaoEl = document.querySelector<HTMLElement>("#explicacao")!;
   const btnProxima = document.querySelector<HTMLButtonElement>("#btn-proxima")!;
   const resultadoTexto = document.querySelector<HTMLElement>("#resultado-texto")!;
-  const btnTentarDeNovo = document.querySelector<HTMLButtonElement>("#btn-tentar-de-novo")!;
+  const btnTentarDeNovo =
+    document.querySelector<HTMLButtonElement>("#btn-tentar-de-novo")!;
+  const painelFeedback =
+    document.querySelector<HTMLElement>("[data-feedback-panel]")!;
+
+  const view: QuestionView = {
+    prompt: document.querySelector<HTMLElement>("[data-prompt]")!,
+    scene: document.querySelector<HTMLElement>("[data-scene]")!,
+    options: document.querySelector<HTMLElement>("[data-options]")!,
+  };
 
   let perguntas: PublicQuestion[] = [];
   let indiceAtual = 0;
-  let respostas: { question_id: string; option_id: string }[] = [];
-  let respondendo = false;
+  let respostas: SubmittedAnswer[] = [];
   let ultimaMensagemAcerto: string | undefined;
 
   function mostrar(estado: Estado) {
@@ -313,9 +228,8 @@ import type {
     } = await supabase.auth.getSession();
 
     if (erroSessao) {
-      mostrarErroDeAcesso(
-        "Não foi possível verificar seu acesso. Tente novamente.",
-      );
+      mensagemAcesso.textContent =
+        "Não foi possível verificar seu acesso. Tente novamente.";
       return false;
     }
 
@@ -331,9 +245,8 @@ import type {
       .maybeSingle();
 
     if (erroPerfil) {
-      mostrarErroDeAcesso(
-        "Não foi possível verificar seu perfil. Tente novamente.",
-      );
+      mensagemAcesso.textContent =
+        "Não foi possível verificar seu perfil. Tente novamente.";
       return false;
     }
 
@@ -351,8 +264,32 @@ import type {
     return true;
   }
 
-  async function iniciar() {
+  async function carregarPerguntas() {
     mostrar("carregando");
+    respostas = [];
+    indiceAtual = 0;
+    ultimaMensagemAcerto = undefined;
+
+    const { data, error } = await supabase
+      .from("questions")
+      .select("id, operation, difficulty, question_type, prompt, content")
+      .eq("operation", operation)
+      .eq("is_active", true)
+      .eq("question_type", "multiple_choice");
+
+    if (error) {
+      console.error(error);
+      mostrar("erro");
+      return;
+    }
+
+    const todas = (data ?? []) as PublicQuestion[];
+    if (todas.length < PERGUNTAS_POR_PARTIDA) {
+      mostrar("vazio");
+      return;
+    }
+
+    perguntas = todas.sort(() => Math.random() - 0.5).slice(0, PERGUNTAS_POR_PARTIDA);
 
     const temAcesso = await verificarAcessoAluno();
     if (!temAcesso) return;
@@ -417,40 +354,43 @@ import type {
     if (respondendo) return;
     respondendo = true;
 
-    opcoesEl
-      .querySelectorAll("button")
-      .forEach((botao) => ((botao as HTMLButtonElement).disabled = true));
+    renderQuestion(view, pergunta, (optionId) => responder(pergunta, optionId));
+  }
+
+  async function responder(pergunta: PublicQuestion, optionId: string) {
+    lockOptions(view, optionId);
 
     // A resposta certa é conferida no servidor (função check-answer).
     // O navegador nunca recebe o gabarito, só se acertou e a explicação.
-    const { data, error } = await supabase.functions.invoke<AnswerResult>("check-answer", {
-      body: { question_id: pergunta.id, option_id: optionId },
-    });
+    const { data, error } = await supabase.functions.invoke<AnswerResult>(
+      "check-answer",
+      { body: { question_id: pergunta.id, option_id: optionId } },
+    );
 
     respostas.push({ question_id: pergunta.id, option_id: optionId });
 
     if (error || !data) {
-      feedbackEl.hidden = false;
-      feedbackEl.className = "feedback tente-de-novo";
-      feedbackEl.textContent = "Não deu para conferir essa resposta agora.";
+      renderFeedback(painelFeedback, {
+        tone: "try-again",
+        message: "Não deu para conferir essa resposta agora.",
+        animation: "none",
+        explanation: "",
+      });
       btnProxima.hidden = false;
       return;
     }
 
-    botaoClicado.classList.add(data.correct ? "certa" : "errada");
-
     const exibir = buildFeedback(data, ultimaMensagemAcerto);
     if (data.correct) ultimaMensagemAcerto = exibir.message;
 
-    const scene = cenaContainer.querySelector<HTMLElement>("[data-scene]");
-    if (scene) await playFeedback(scene, exibir.animation);
+    // Divisão começa como "monte" (não revela a resposta); depois de
+    // responder, a cena mostra os grupos.
+    if (pergunta.operation === "division") {
+      renderScene(view.scene, pergunta.content.scene, "groups");
+    }
 
-    feedbackEl.hidden = false;
-    feedbackEl.className = `feedback ${exibir.tone === "success" ? "sucesso" : "tente-de-novo"}`;
-    feedbackEl.textContent = exibir.message;
-
-    explicacaoEl.hidden = false;
-    explicacaoEl.textContent = exibir.explanation;
+    renderFeedback(painelFeedback, exibir);
+    await playFeedback(view.scene, exibir.animation);
 
     btnProxima.hidden = false;
   }
@@ -458,26 +398,23 @@ import type {
   btnProxima.addEventListener("click", async () => {
     indiceAtual++;
     if (indiceAtual < perguntas.length) {
-      renderizarPergunta();
+      mostrarPergunta();
     } else {
       await finalizarPartida();
     }
   });
 
-  btnTentarDeNovo.addEventListener("click", iniciar);
+  btnTentarDeNovo.addEventListener("click", carregarPerguntas);
 
   async function finalizarPartida() {
     mostrar("carregando");
 
     // A pontuação é calculada e salva pelo servidor (função submit-attempt);
     // o navegador só envia as respostas, nunca o placar.
-    const { data, error } = await supabase.functions.invoke<{
-      ok: boolean;
-      total_questions: number;
-      correct_answers: number;
-    }>("submit-attempt", {
-      body: { operation, answers: respostas },
-    });
+    const { data, error } = await supabase.functions.invoke<AttemptResult>(
+      "submit-attempt",
+      { body: { operation, answers: respostas } },
+    );
 
        if (error || !data?.ok) {
       // Registra o motivo real da falha para facilitar o diagnóstico.
@@ -505,5 +442,10 @@ import type {
     );
   }
 
-  iniciar();
+  const autorizado = await verificarAcesso();
+  if (autorizado) {
+    mensagemAcesso.hidden = true;
+    areaJogo.hidden = false;
+    await carregarPerguntas();
+  }
 </script>

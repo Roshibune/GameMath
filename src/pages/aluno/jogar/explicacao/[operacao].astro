@@ -1,0 +1,153 @@
+---
+import Layout from "../../../../layouts/Layout.astro";
+import type { Operation } from "../../../../lib/questions/types";
+
+export function getStaticPaths() {
+  return [
+    {
+      params: { operacao: "multiplicacao" },
+      props: { operation: "multiplication" as Operation },
+    },
+    {
+      params: { operacao: "divisao" },
+      props: { operation: "division" as Operation },
+    },
+  ];
+}
+
+const { operation } = Astro.props;
+const rota = operation === "multiplication" ? "multiplicacao" : "divisao";
+const titulo = operation === "multiplication" ? "Multiplicação" : "Divisão";
+
+// CONTEÚDO PROVISÓRIO: o Integrante 4 vai organizar a explicação oficial da
+// matéria. Por enquanto, deixei um texto simples só para a página não ficar
+// vazia. Trocar pelo conteúdo definitivo quando ele estiver pronto.
+const explicacao =
+  operation === "multiplication"
+    ? {
+        resumo:
+          "Multiplicar é somar a mesma quantidade várias vezes, de um jeito mais rápido.",
+        exemplo:
+          "Se tem 3 grupos com 4 blocos em cada, isso é o mesmo que 4 + 4 + 4 = 12. Em vez de somar, escrevemos 3 × 4 = 12.",
+        dica: "Pense em 'grupos de': 3 × 4 quer dizer 3 grupos de 4.",
+      }
+    : {
+        resumo:
+          "Dividir é repartir uma quantidade em grupos iguais, para descobrir quanto fica em cada grupo.",
+        exemplo:
+          "Se tem 12 blocos para repartir em 3 grupos iguais, cada grupo fica com 4 blocos. Escrevemos 12 ÷ 3 = 4.",
+        dica: "Pense em 'repartir igualzinho': 12 ÷ 3 quer dizer repartir 12 em 3 grupos do mesmo tamanho.",
+      };
+---
+
+<Layout title={`Como funciona: ${titulo} — GameMath`}>
+  <main class="explicacao-pagina">
+    <p id="mensagem-acesso" role="status" aria-live="polite">
+      Verificando seu acesso...
+    </p>
+
+    <div id="conteudo" hidden>
+      <h1>Antes de jogar: {titulo}</h1>
+
+      <section class="cartao-explicacao">
+        <p class="resumo">{explicacao.resumo}</p>
+        <p class="exemplo">
+          <strong>Exemplo:</strong> {explicacao.exemplo}
+        </p>
+        <p class="dica">
+          <strong>Dica:</strong> {explicacao.dica}
+        </p>
+      </section>
+
+      <a href={`/aluno/jogar/${rota}`} class="botao-principal">
+        Começar a jogar
+      </a>
+    </div>
+  </main>
+</Layout>
+
+<style>
+  .explicacao-pagina {
+    max-width: 42rem;
+    margin: 1.5rem auto;
+    text-align: center;
+  }
+
+  .cartao-explicacao {
+    margin: 1.5rem 0;
+    padding: clamp(1rem, 3vw, 1.5rem);
+    border: 1px solid var(--gm-border, #d7e0f5);
+    border-radius: var(--gm-radius, 1.25rem);
+    background: var(--gm-surface, #ffffff);
+    text-align: left;
+  }
+
+  .resumo {
+    font-size: 1.2rem;
+    font-weight: 750;
+    color: var(--gm-text, #172554);
+  }
+
+  .exemplo,
+  .dica {
+    color: var(--gm-muted, #475569);
+  }
+
+  .botao-principal {
+    display: inline-flex;
+    min-height: var(--gm-tap-size, 44px);
+    align-items: center;
+    justify-content: center;
+    padding: 0.8rem 1.6rem;
+    border: 2px solid var(--gm-primary, #3158c9);
+    border-radius: 0.9rem;
+    background: var(--gm-primary, #3158c9);
+    color: #ffffff;
+    font-size: 1.1rem;
+    font-weight: 800;
+    text-decoration: none;
+  }
+
+  .botao-principal:hover {
+    border-color: var(--gm-primary-hover, #2445a8);
+    background: var(--gm-primary-hover, #2445a8);
+  }
+</style>
+
+<script>
+  import { supabase } from "../../../../lib/supabase";
+
+  const mensagem = document.querySelector<HTMLElement>("#mensagem-acesso")!;
+  const conteudo = document.querySelector<HTMLElement>("#conteudo")!;
+
+  const {
+    data: { session },
+    error: erroSessao,
+  } = await supabase.auth.getSession();
+
+  if (erroSessao) {
+    mensagem.textContent =
+      "Não foi possível verificar seu acesso. Tente novamente.";
+  } else if (!session) {
+    window.location.replace("/login");
+  } else {
+    const { data: perfil, error: erroPerfil } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("user_id", session.user.id)
+      .maybeSingle();
+
+    if (erroPerfil) {
+      mensagem.textContent =
+        "Não foi possível verificar seu perfil. Tente novamente.";
+    } else if (perfil?.role === "teacher") {
+      window.location.replace("/professor");
+    } else if (perfil?.role === "student") {
+      mensagem.hidden = true;
+      conteudo.hidden = false;
+    } else {
+      await supabase.auth.signOut();
+      window.location.replace("/login");
+    }
+  }
+</script>

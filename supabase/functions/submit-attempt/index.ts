@@ -47,9 +47,10 @@ export default {
       return json({ error: "A operação informada é inválida." }, 400);
     }
 
-    // O banco atual tem cinco questões por operação.
-    if (!Array.isArray(rawAnswers) || rawAnswers.length !== 5) {
-      return json({ error: "A partida deve conter cinco respostas." }, 400);
+    // O MVP reduzido tem três questões ativas por operação
+    // (fácil, média e difícil).
+    if (!Array.isArray(rawAnswers) || rawAnswers.length !== 3) {
+      return json({ error: "A partida deve conter três respostas." }, 400);
     }
 
     const answers: SubmittedAnswer[] = [];
