@@ -157,21 +157,26 @@ const titulo = operation === "multiplication" ? "Multiplicação" : "Divisão";
 
 <script>
   import { supabase } from "../../../lib/supabase";
-import { buildFeedback, buildResultMessage } from "../../../lib/messages";
-import { playFeedback } from "../../../lib/feedback";
-import { fetchGameQuestions } from "../../../lib/questions/api";
-import { renderScene, sceneModeBefore } from "../../../lib/scene";
-import type {
-  Operation,
-  AnswerResult,
-  PublicQuestion,
-} from "../../../lib/questions/types";
+  import { buildFeedback, buildResultMessage } from "../../../lib/messages";
+  import { playFeedback } from "../../../lib/feedback";
+  import { clearFeedback, renderFeedback } from "../../../lib/feedback-panel";
+  import { fetchGameQuestions, GAME_SIZE } from "../../../lib/questions/api";
+  import { checkAnswer, submitAttempt } from "../../../lib/questions/server";
+  import { renderScene } from "../../../lib/scene";
+  import {
+    lockOptions,
+    renderQuestion,
+    type QuestionView,
+  } from "../../../lib/question-view";
+  import type {
+    AnswerResult,
+    Operation,
+    PublicQuestion,
+    SubmittedAnswer,
+  } from "../../../lib/questions/types";
 
-  // Quantidade exigida pela função submit-attempt: hoje ela só aceita
-  // partidas com exatamente 5 respostas.
-  const PERGUNTAS_POR_PARTIDA = 5;
-
-  const main = document.querySelector("main")!;
+  // ---------- Elementos da página ----------
+  const main = document.querySelector<HTMLElement>("main")!;
   const operation = main.dataset.operation as Operation;
 
   const mensagemAcesso = document.querySelector<HTMLElement>("#mensagem-acesso")!;
@@ -190,9 +195,9 @@ import type {
 
   const progresso = document.querySelector<HTMLElement>("#progresso")!;
   const btnProxima = document.querySelector<HTMLButtonElement>("#btn-proxima")!;
-  const resultadoTexto = document.querySelector<HTMLElement>("#resultado-texto")!;
   const btnTentarDeNovo =
     document.querySelector<HTMLButtonElement>("#btn-tentar-de-novo")!;
+  const resultadoTexto = document.querySelector<HTMLElement>("#resultado-texto")!;
   const painelFeedback =
     document.querySelector<HTMLElement>("[data-feedback-panel]")!;
 
@@ -202,25 +207,18 @@ import type {
     options: document.querySelector<HTMLElement>("[data-options]")!,
   };
 
+  // ---------- Estado da partida ----------
   let perguntas: PublicQuestion[] = [];
   let indiceAtual = 0;
   let respostas: SubmittedAnswer[] = [];
   let ultimaMensagemAcerto: string | undefined;
+  let respondendo = false;
 
   function mostrar(estado: Estado) {
     for (const nome of estados) secoes[nome].hidden = nome !== estado;
   }
 
-    function mostrarErroDeAcesso(texto: string) {
-    const paragrafo = secoes.erro.querySelector("p");
-
-    if (paragrafo) {
-      paragrafo.textContent = texto;
-    }
-
-    mostrar("erro");
-  }
-
+  // ---------- Acesso: só aluno logado ----------
   async function verificarAcessoAluno(): Promise<boolean> {
     const {
       data: { session },
@@ -264,127 +262,83 @@ import type {
     return true;
   }
 
+  // ---------- Carregar a partida ----------
   async function carregarPerguntas() {
     mostrar("carregando");
     respostas = [];
     indiceAtual = 0;
     ultimaMensagemAcerto = undefined;
 
-    const { data, error } = await supabase
-      .from("questions")
-      .select("id, operation, difficulty, question_type, prompt, content")
-      .eq("operation", operation)
-      .eq("is_active", true)
-      .eq("question_type", "multiple_choice");
-
-    if (error) {
-      console.error(error);
-      mostrar("erro");
-      return;
-    }
-
-    const todas = (data ?? []) as PublicQuestion[];
-    if (todas.length < PERGUNTAS_POR_PARTIDA) {
-      mostrar("vazio");
-      return;
-    }
-
-    perguntas = todas.sort(() => Math.random() - 0.5).slice(0, PERGUNTAS_POR_PARTIDA);
-
-    const temAcesso = await verificarAcessoAluno();
-    if (!temAcesso) return;
-
     try {
       perguntas = await fetchGameQuestions(operation);
     } catch (e) {
       console.error(e);
-      mostrarErroDeAcesso("Não deu para carregar as perguntas agora. Tente de novo.");
+      mostrar("erro");
       return;
     }
 
-    // A função submit-attempt só aceita partidas com exatamente 5 respostas.
-    if (perguntas.length < PERGUNTAS_POR_PARTIDA) {
+    if (perguntas.length < GAME_SIZE) {
       mostrar("vazio");
       return;
     }
 
-    indiceAtual = 0;
-    respostas = [];
-    ultimaMensagemAcerto = undefined;
-    renderizarPergunta();
+    mostrarPergunta();
     mostrar("jogo");
   }
 
-    function renderizarPergunta() {
+  // ---------- Mostrar uma pergunta ----------
+  function mostrarPergunta() {
     const pergunta = perguntas[indiceAtual];
     respondendo = false;
 
     progresso.textContent = `Pergunta ${indiceAtual + 1} de ${perguntas.length}`;
-    perguntaTexto.textContent = pergunta.prompt;
-
-    // Cena de blocos. Na divisão ela começa como "monte" (não revela a resposta).
-    const scene = document.createElement("div");
-    scene.className = "scene";
-    scene.setAttribute("data-scene", "");
-    scene.setAttribute("role", "img");
-    renderScene(scene, pergunta.content.scene, sceneModeBefore(operation));
-    cenaContainer.replaceChildren(scene);
-
-    // Alternativas como botões.
-    opcoesEl.replaceChildren(
-      ...pergunta.content.options.map((opcao) => {
-        const botao = document.createElement("button");
-        botao.type = "button";
-        botao.textContent = opcao.text;
-        botao.addEventListener("click", () => responder(pergunta, opcao.id, botao));
-        return botao;
-      }),
-    );
-
-    feedbackEl.hidden = true;
-    explicacaoEl.hidden = true;
+    btnProxima.textContent =
+      indiceAtual === perguntas.length - 1 ? "Ver resultado" : "Próxima pergunta";
     btnProxima.hidden = true;
-  }
-
-  async function responder(
-    pergunta: PublicQuestion,
-    optionId: string,
-    botaoClicado: HTMLButtonElement,
-  ) {
-    if (respondendo) return;
-    respondendo = true;
+    clearFeedback(painelFeedback);
 
     renderQuestion(view, pergunta, (optionId) => responder(pergunta, optionId));
   }
 
+  // Libera as alternativas de novo (usado quando a conferência falha).
+  function destravarAlternativas() {
+    delete view.options.dataset.locked;
+    view.options.querySelectorAll<HTMLButtonElement>(".option").forEach((botao) => {
+      botao.removeAttribute("aria-disabled");
+      delete botao.dataset.state;
+    });
+  }
+
+  // ---------- Responder ----------
   async function responder(pergunta: PublicQuestion, optionId: string) {
+    if (respondendo) return;
+    respondendo = true;
     lockOptions(view, optionId);
 
-    // A resposta certa é conferida no servidor (função check-answer).
-    // O navegador nunca recebe o gabarito, só se acertou e a explicação.
-    const { data, error } = await supabase.functions.invoke<AnswerResult>(
-      "check-answer",
-      { body: { question_id: pergunta.id, option_id: optionId } },
-    );
-
-    respostas.push({ question_id: pergunta.id, option_id: optionId });
-
-    if (error || !data) {
+    // O servidor (check-answer) diz se acertou. O gabarito nunca vem para cá.
+    let resultado: AnswerResult;
+    try {
+      resultado = await checkAnswer(pergunta.id, optionId);
+    } catch (e) {
+      console.error(e);
       renderFeedback(painelFeedback, {
         tone: "try-again",
-        message: "Não deu para conferir essa resposta agora.",
+        message: "Não deu para conferir essa resposta agora. Tente de novo.",
         animation: "none",
         explanation: "",
       });
-      btnProxima.hidden = false;
+      destravarAlternativas();
+      respondendo = false;
       return;
     }
 
-    const exibir = buildFeedback(data, ultimaMensagemAcerto);
-    if (data.correct) ultimaMensagemAcerto = exibir.message;
+    respostas.push({ question_id: pergunta.id, option_id: optionId });
 
-    // Divisão começa como "monte" (não revela a resposta); depois de
-    // responder, a cena mostra os grupos.
+    const exibir = buildFeedback(resultado, ultimaMensagemAcerto);
+    if (resultado.correct) ultimaMensagemAcerto = exibir.message;
+
+    // Divisão começa como "monte" (não revela a resposta);
+    // depois de responder, a cena mostra os grupos.
     if (pergunta.operation === "division") {
       renderScene(view.scene, pergunta.content.scene, "groups");
     }
@@ -393,8 +347,28 @@ import type {
     await playFeedback(view.scene, exibir.animation);
 
     btnProxima.hidden = false;
+    btnProxima.focus();
   }
 
+  // ---------- Finalizar e salvar ----------
+  async function finalizarPartida() {
+    mostrar("carregando");
+
+    try {
+      // O servidor calcula e salva a pontuação; aqui só enviamos as respostas.
+      const resultado = await submitAttempt(operation, respostas);
+      resultadoTexto.textContent = buildResultMessage(
+        resultado.correct_answers,
+        resultado.total_questions,
+      );
+      mostrar("resultado");
+    } catch (e) {
+      console.error("[submit-attempt] falhou", e);
+      mostrar("erro");
+    }
+  }
+
+  // ---------- Eventos ----------
   btnProxima.addEventListener("click", async () => {
     indiceAtual++;
     if (indiceAtual < perguntas.length) {
@@ -404,45 +378,18 @@ import type {
     }
   });
 
-  btnTentarDeNovo.addEventListener("click", carregarPerguntas);
-
-  async function finalizarPartida() {
-    mostrar("carregando");
-
-    // A pontuação é calculada e salva pelo servidor (função submit-attempt);
-    // o navegador só envia as respostas, nunca o placar.
-    const { data, error } = await supabase.functions.invoke<AttemptResult>(
-      "submit-attempt",
-      { body: { operation, answers: respostas } },
-    );
-
-       if (error || !data?.ok) {
-      // Registra o motivo real da falha para facilitar o diagnóstico.
-      const resposta = (error as { context?: unknown } | null)?.context;
-      let status: number | string = "sem resposta do servidor";
-      let corpo = "";
-      if (resposta instanceof Response) {
-        status = resposta.status;
-        corpo = await resposta.text().catch(() => "");
-      }
-      console.error("[submit-attempt] falhou", {
-        status,
-        corpo,
-        error,
-        respostasEnviadas: respostas,
-      });
-      mostrar("erro");
-      return;
+  // Se todas as respostas já foram dadas, tenta só salvar de novo
+  // (sem obrigar a criança a jogar tudo outra vez).
+  btnTentarDeNovo.addEventListener("click", async () => {
+    if (respostas.length === GAME_SIZE) {
+      await finalizarPartida();
+    } else {
+      await carregarPerguntas();
     }
+  });
 
-    mostrar("resultado");
-    resultadoTexto.textContent = buildResultMessage(
-      data.correct_answers,
-      data.total_questions,
-    );
-  }
-
-  const autorizado = await verificarAcesso();
+  // ---------- Início ----------
+  const autorizado = await verificarAcessoAluno();
   if (autorizado) {
     mensagemAcesso.hidden = true;
     areaJogo.hidden = false;

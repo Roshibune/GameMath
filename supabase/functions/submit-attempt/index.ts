@@ -17,6 +17,9 @@ function json(body: Record<string, unknown>, status = 200) {
 const UUID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+// Tem de ser igual ao GAME_SIZE de src/lib/questions/api.ts
+const ANSWERS_PER_ATTEMPT = 5;
+
 export default {
   fetch: withSupabase({ auth: "user" }, async (req, ctx) => {
     if (req.method !== "POST") {
@@ -47,10 +50,15 @@ export default {
       return json({ error: "A operação informada é inválida." }, 400);
     }
 
-    // O MVP reduzido tem três questões ativas por operação
-    // (fácil, média e difícil).
-    if (!Array.isArray(rawAnswers) || rawAnswers.length !== 3) {
-      return json({ error: "A partida deve conter três respostas." }, 400);
+    // Cada partida tem 5 perguntas (mesmo valor de GAME_SIZE no front-end).
+    if (
+      !Array.isArray(rawAnswers) ||
+      rawAnswers.length !== ANSWERS_PER_ATTEMPT
+    ) {
+      return json(
+        { error: `A partida deve conter ${ANSWERS_PER_ATTEMPT} respostas.` },
+        400,
+      );
     }
 
     const answers: SubmittedAnswer[] = [];
