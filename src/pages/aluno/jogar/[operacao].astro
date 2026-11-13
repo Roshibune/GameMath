@@ -157,26 +157,19 @@ const titulo = operation === "multiplication" ? "Multiplicação" : "Divisão";
 
 <script>
   import { supabase } from "../../../lib/supabase";
-  import { buildFeedback, buildResultMessage } from "../../../lib/messages";
-  import { playFeedback } from "../../../lib/feedback";
-  import { renderScene } from "../../../lib/scene";
-  import {
-    lockOptions,
-    renderQuestion,
-    type QuestionView,
-  } from "../../../lib/question-view";
-  import { clearFeedback, renderFeedback } from "../../../lib/feedback-panel";
-  import type {
-    Operation,
-    PublicQuestion,
-    AnswerResult,
-    AttemptResult,
-    SubmittedAnswer,
-  } from "../../../lib/questions/types";
+import { buildFeedback, buildResultMessage } from "../../../lib/messages";
+import { playFeedback } from "../../../lib/feedback";
+import { fetchGameQuestions } from "../../../lib/questions/api";
+import { renderScene, sceneModeBefore } from "../../../lib/scene";
+import type {
+  Operation,
+  AnswerResult,
+  PublicQuestion,
+} from "../../../lib/questions/types";
 
-  // O MVP reduzido tem três questões ativas por operação
-  // (fácil, média e difícil) — combinado com o Integrante 4.
-  const PERGUNTAS_POR_PARTIDA = 3;
+  // Quantidade exigida pela função submit-attempt: hoje ela só aceita
+  // partidas com exatamente 5 respostas.
+  const PERGUNTAS_POR_PARTIDA = 5;
 
   const main = document.querySelector("main")!;
   const operation = main.dataset.operation as Operation;
@@ -218,7 +211,17 @@ const titulo = operation === "multiplication" ? "Multiplicação" : "Divisão";
     for (const nome of estados) secoes[nome].hidden = nome !== estado;
   }
 
-  async function verificarAcesso(): Promise<boolean> {
+    function mostrarErroDeAcesso(texto: string) {
+    const paragrafo = secoes.erro.querySelector("p");
+
+    if (paragrafo) {
+      paragrafo.textContent = texto;
+    }
+
+    mostrar("erro");
+  }
+
+  async function verificarAcessoAluno(): Promise<boolean> {
     const {
       data: { session },
       error: erroSessao,
@@ -288,16 +291,68 @@ const titulo = operation === "multiplication" ? "Multiplicação" : "Divisão";
 
     perguntas = todas.sort(() => Math.random() - 0.5).slice(0, PERGUNTAS_POR_PARTIDA);
 
+    const temAcesso = await verificarAcessoAluno();
+    if (!temAcesso) return;
+
+    try {
+      perguntas = await fetchGameQuestions(operation);
+    } catch (e) {
+      console.error(e);
+      mostrarErroDeAcesso("Não deu para carregar as perguntas agora. Tente de novo.");
+      return;
+    }
+
+    // A função submit-attempt só aceita partidas com exatamente 5 respostas.
+    if (perguntas.length < PERGUNTAS_POR_PARTIDA) {
+      mostrar("vazio");
+      return;
+    }
+
+    indiceAtual = 0;
+    respostas = [];
+    ultimaMensagemAcerto = undefined;
+    renderizarPergunta();
     mostrar("jogo");
-    mostrarPergunta();
   }
 
-  function mostrarPergunta() {
+    function renderizarPergunta() {
     const pergunta = perguntas[indiceAtual];
+    respondendo = false;
 
     progresso.textContent = `Pergunta ${indiceAtual + 1} de ${perguntas.length}`;
-    clearFeedback(painelFeedback);
+    perguntaTexto.textContent = pergunta.prompt;
+
+    // Cena de blocos. Na divisão ela começa como "monte" (não revela a resposta).
+    const scene = document.createElement("div");
+    scene.className = "scene";
+    scene.setAttribute("data-scene", "");
+    scene.setAttribute("role", "img");
+    renderScene(scene, pergunta.content.scene, sceneModeBefore(operation));
+    cenaContainer.replaceChildren(scene);
+
+    // Alternativas como botões.
+    opcoesEl.replaceChildren(
+      ...pergunta.content.options.map((opcao) => {
+        const botao = document.createElement("button");
+        botao.type = "button";
+        botao.textContent = opcao.text;
+        botao.addEventListener("click", () => responder(pergunta, opcao.id, botao));
+        return botao;
+      }),
+    );
+
+    feedbackEl.hidden = true;
+    explicacaoEl.hidden = true;
     btnProxima.hidden = true;
+  }
+
+  async function responder(
+    pergunta: PublicQuestion,
+    optionId: string,
+    botaoClicado: HTMLButtonElement,
+  ) {
+    if (respondendo) return;
+    respondendo = true;
 
     renderQuestion(view, pergunta, (optionId) => responder(pergunta, optionId));
   }
@@ -361,8 +416,21 @@ const titulo = operation === "multiplication" ? "Multiplicação" : "Divisão";
       { body: { operation, answers: respostas } },
     );
 
-    if (error || !data?.ok) {
-      console.error(error ?? data);
+       if (error || !data?.ok) {
+      // Registra o motivo real da falha para facilitar o diagnóstico.
+      const resposta = (error as { context?: unknown } | null)?.context;
+      let status: number | string = "sem resposta do servidor";
+      let corpo = "";
+      if (resposta instanceof Response) {
+        status = resposta.status;
+        corpo = await resposta.text().catch(() => "");
+      }
+      console.error("[submit-attempt] falhou", {
+        status,
+        corpo,
+        error,
+        respostasEnviadas: respostas,
+      });
       mostrar("erro");
       return;
     }
