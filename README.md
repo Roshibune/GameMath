@@ -1,70 +1,73 @@
 # GameMath
 
-GameMath é uma ferramenta web educativa para apoiar alunos do 4º ano do Ensino Fundamental na prática de multiplicação e divisão.
+O **GameMath** é um jogo educativo para alunos do 4º ano do Ensino Fundamental praticarem **multiplicação** e **divisão**. A proposta é aprender resolvendo questões e recebendo retorno sobre as respostas.
 
-O MVP prevê uma área do aluno para jogar e uma área do professor para acompanhar o desempenho dos alunos vinculados por código. As perguntas e explicações serão fornecidas pelo grupo de Pedagogia parceiro do projeto.
+O jogo pode ser acessado pelo navegador, inclusive em um Chromebook com conexão à internet.
 
-## Tecnologias
+## Como começar
 
-- Astro
-- JavaScript
-- Supabase: autenticação e banco de dados
+1. Abra o link do GameMath compartilhado pela equipe.
+2. Na tela inicial, escolha se você é aluno ou professor.
+3. Se ainda não tiver uma conta, selecione **Criar conta** e preencha os dados pedidos.
 
-## Requisitos
+## Para alunos
 
-- Node.js 22.12.0 ou superior
-- npm
-- Git
+### Criar uma conta
 
-O Docker Desktop será necessário para iniciar o Supabase localmente. Para executar apenas o Astro conectado ao projeto Supabase hospedado, não é necessário iniciar o Docker.
+Na opção **Sou aluno**, escolha **Criar conta** e informe:
 
-## Preparar o projeto
+- um apelido;
+- um PIN com 6 números;
+- o código do professor ao qual deseja se vincular.
 
-Clone o repositório e entre na pasta do projeto. Depois, instale as dependências:
+Guarde o apelido e o PIN para entrar novamente. A conta mantém o perfil e o desempenho do aluno.
 
-```powershell
-npm install
-```
+### Entrar e jogar
 
-Crie seu arquivo local de configuração a partir do exemplo:
+1. Na opção **Sou aluno**, escolha **Entrar**.
+2. Informe o apelido e o PIN cadastrados.
+3. No perfil, selecione **Jogar agora**.
+4. Escolha **Multiplicação** ou **Divisão**.
+5. Leia a explicação da matéria e selecione **Começar a jogar**.
+6. Leia cada questão, escolha uma alternativa e avance conforme as instruções na tela.
+7. Ao terminar, confira o resultado da partida. O desempenho fica disponível no perfil.
 
-```powershell
-Copy-Item .env.example .env.local
-```
+### Pontos e titulações
 
-Abra `.env.local` e preencha `PUBLIC_SUPABASE_URL` e `PUBLIC_SUPABASE_PUBLISHABLE_KEY` com os dados de conexão do projeto Supabase.
+Cada resposta certa soma **1 ponto** e cada resposta errada tira **1 ponto**. A pontuação considera todas as partidas concluídas de multiplicação e divisão e não fica abaixo de zero.
 
-**Não envie `.env.local` ao GitHub.** O arquivo contém configurações locais. O `.env.example` pode ser compartilhado porque não contém valores.
+Por exemplo, em uma partida com 5 questões, 3 acertos e 2 erros dão **1 ponto** no total. Se as 5 respostas estiverem erradas, a partida desconta **5 pontos** da pontuação acumulada, até o mínimo de zero.
 
-## Executar o Astro
+O perfil mostra a pontuação atual, a titulação alcançada e quantos pontos faltam para a próxima. As 10 titulações e seus pontos mínimos são:
 
-Inicie o servidor local:
+| Titulação | Pontos mínimos acumulados |
+|---|---:|
+| Iniciante | 0 |
+| Aprendiz | 20 |
+| Explorador | 60 |
+| Desbravador | 140 |
+| Estrategista | 300 |
+| Especialista | 620 |
+| Mestre dos Cálculos | 1.260 |
+| Guardião dos Números | 2.540 |
+| Lenda dos Cálculos | 5.100 |
+| Lenda do GameMath | 10.220 |
 
-```powershell
-npm run dev
-```
+O custo de cada nova titulação dobra em relação à promoção anterior: primeiro são necessários 20 pontos; depois, mais 40; em seguida, mais 80, e assim por diante. Como os erros descontam pontos, a pontuação e a titulação podem diminuir também.
 
-O terminal mostrará o endereço local para abrir no navegador. Para encerrar o servidor, pressione `Ctrl+C`.
+### Perfil e vínculo com o professor
 
-## Comandos disponíveis
+No perfil, o aluno pode consultar o professor ao qual está vinculado e ver seu desempenho em multiplicação e divisão. Para trocar de professor, use **Trocar de professor** e informe o novo código. O aluno fica vinculado a um professor por vez.
 
-```powershell
-npm run dev
-npm run build
-npm run preview
-```
+Use **Sair da conta** ao terminar, especialmente em um dispositivo compartilhado.
 
-## Banco de dados e Supabase CLI
+## Para professores
 
-A estrutura inicial do banco está registrada em `supabase/migrations/`. As alterações futuras no banco devem ser registradas em novas migrações e enviadas ao repositório para que o grupo possa acompanhá-las.
+1. Na tela inicial, escolha **Sou professor**.
+2. Entre com o e-mail e a senha cadastrados. Para criar uma conta, escolha **Criar conta** e informe também o código convite recebido.
+3. No painel do professor, consulte o código de vínculo e compartilhe-o com os alunos.
+4. Acompanhe os alunos vinculados e os resultados das partidas exibidos no painel.
 
-Para comandos da Supabase CLI que alterem o banco remoto, confirme antes que está usando o projeto correto e que a migração foi revisada.
+## Sobre o MVP
 
-## Estrutura atual
-
-- `src/pages/`: páginas do site
-- `src/components/`: componentes reutilizáveis
-- `src/layouts/`: estrutura compartilhada das páginas
-- `src/lib/`: conexão do Astro com serviços do projeto
-- `supabase/migrations/`: histórico da estrutura do banco
-- `supabase/functions/`: funções de servidor do Supabase
+O GameMath está em desenvolvimento. No MVP, o foco é praticar multiplicação e divisão, manter o perfil do aluno e permitir que o professor acompanhe o desempenho dos alunos vinculados. As telas e os conteúdos podem mudar conforme o grupo aprimora a ferramenta.
